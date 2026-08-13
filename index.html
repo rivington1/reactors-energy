@@ -98,6 +98,10 @@
   #tip .k{font:400 9.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;
     color:var(--faint);display:inline-block;min-width:88px;vertical-align:baseline}
   #tip .v{font-variant-numeric:tabular-nums}
+  /* label in a fixed column, value in its own column, so a long value such as
+     the licensing history wraps under itself instead of under the label */
+  #tip .kv{display:grid;grid-template-columns:88px 1fr;column-gap:4px;align-items:baseline}
+  #tip .kv .k{min-width:0}
   #tip .nb{margin-top:8px;padding-top:7px;border-top:1px solid var(--rule);color:var(--ink-2);font-size:12.5px}
   /* criticality badge — deliberately the loudest thing in the card */
   .critbadge{display:flex;align-items:center;gap:7px;margin:5px 0 2px;
@@ -1088,14 +1092,14 @@ function tipHTML(d){
     + "<div class='m mono'>"+TYPE[d.type].label.toUpperCase()+(d.model? " &middot; "+esc(d.model) : "")+"</div>"
     + "<div class='badge'><span class='lswatch' style='background:"+lf.c+"'></span>"+lf.short+"</div>"
     + (d.bio? "<p class='bio'>"+esc(d.bio)+"</p>" : "<div style='height:9px'></div>")
-    + "<div><span class='k'>Status</span>"+(d.crit? "Critical &mdash; sustained chain reaction" : CAT[d.cat].built)+"</div>"
-    + "<div><span class='k'>Owner today</span>"+esc(d.own)+"</div>"
-    + (d.lic? "<div><span class='k'>Licensed as</span>"+esc(d.lic)+"</div>" : "")
-    + "<div style='margin-top:6px'><span class='k'>Capacity</span><span class='v'>"+(d.mw?d.mw+" MW":"not rated / no grid output")+"</span></div>"
-    + "<div style='margin-top:6px'><span class='k'>Start</span><span class='v'>"+fmt(d.s,d.approx)+"</span></div>"
-    + "<div><span class='k'>"+endLbl+"</span><span class='v'>"+(d.crit? fmtd(d.crit) : fmt(d.e,d.approx))+"</span></div>"
-    + "<div><span class='k'>Build time</span><span class='v'>"+yrs(d.s,d.e)+"</span></div>"
-    + (d.cl? "<div><span class='k'>Shut down</span><span class='v'>"+fmt(d.cl,false)+"</span></div>" : "")
+    + "<div class='kv'><span class='k'>Status</span>"+(d.crit? "Critical &mdash; sustained chain reaction" : CAT[d.cat].built)+"</div>"
+    + "<div class='kv'><span class='k'>Owner today</span>"+esc(d.own)+"</div>"
+    + (d.lic? "<div class='kv'><span class='k'>Licensed as</span>"+esc(d.lic)+"</div>" : "")
+    + "<div class='kv' style='margin-top:6px'><span class='k'>Capacity</span><span class='v'>"+(d.mw?d.mw+" MW":"not rated / no grid output")+"</span></div>"
+    + "<div class='kv' style='margin-top:6px'><span class='k'>Start</span><span class='v'>"+fmt(d.s,d.approx)+"</span></div>"
+    + "<div class='kv'><span class='k'>"+endLbl+"</span><span class='v'>"+(d.crit? fmtd(d.crit) : fmt(d.e,d.approx))+"</span></div>"
+    + "<div class='kv'><span class='k'>Build time</span><span class='v'>"+yrs(d.s,d.e)+"</span></div>"
+    + (d.cl? "<div class='kv'><span class='k'>Shut down</span><span class='v'>"+fmt(d.cl,false)+"</span></div>" : "")
     + (d.note? "<div class='nb'>"+esc(d.note)+"</div>" : "")
     + (d.cat==="planned"? "<div class='nb' style='color:#9b9384'>Reactor construction has not begun; dates are the developer&rsquo;s or regulator&rsquo;s current targets.</div>" : "")
     + (d.approx? "<div class='nb' style='color:#9b9384'>Dates approximate.</div>" : "");
