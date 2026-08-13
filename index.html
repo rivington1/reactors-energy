@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Every Nuclear Reactor Built in the United States — Construction Timelines</title>
+<meta name="description" content="An interactive chart of construction start and end dates for every nuclear power reactor built, abandoned, or currently under construction in the United States.">
+<style>
+  :root{
+    --paper:#f6f3ec; --paper-2:#efebe1; --ink:#232019; --ink-2:#514c42;
+    --muted:#777063; --faint:#9b9384; --rule:#ddd7c8; --rule-2:#e9e4d8;
+    --pwr:#2f6d96; --bwr:#c17d2b; --htgr:#7a5aa2; --gcr:#4d8071;
+    --fbr:#b23f3f; --sfr:#d1602a; --sgr:#1f7f7a; --phwr:#6f8f3a;
+    --ocr:#8a6a55; --msr:#a8477e; --other:#837c70;
+    /* Licence families — a separate, deliberately unrelated palette */
+    --l-p50ol:#1f5f86; --l-p50cp:#c98a2e; --l-p52:#2f7d5e;
+    --l-doe:#8a4b9c; --l-mil:#6d6a5c; --l-none:#b0a897;
+    /* Primary — Unica 77, falling back to Arial */
+    --sans:"Unica 77","Unica77","Unica77 W01",Arial,Helvetica,"Helvetica Neue",sans-serif;
+    /* Secondary — Rosart, falling back to Times New Roman */
+    --serif:"Rosart","Rosart Text","Times New Roman",Times,serif;
+    /* Tertiary — Pitch Sans, falling back to Courier New. Detail info only. */
+    --mono:"Pitch Sans","PitchSans","Courier New",Courier,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);
+    font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:1180px;margin:0 auto;padding:48px 26px 76px}
+
+  .kicker{font:400 10.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 15px}
+  h1{font:400 41px/1.1 var(--sans);letter-spacing:-.02em;margin:0 0 13px;max-width:23ch}
+  .deck{margin:0;color:var(--ink-2);font:18px/1.52 var(--serif);max-width:68ch}
+  .deck em{font-style:italic;color:var(--ink)}
+  .rule{height:1px;background:var(--rule);margin:30px 0 0}
+  .rule.thick{height:2px;background:var(--ink);margin:26px 0 0}
+
+  /* controls */
+  .controls{display:flex;flex-wrap:wrap;gap:16px 32px;align-items:flex-start;
+    padding:17px 0 19px;border-bottom:1px solid var(--rule)}
+  .cgroup{min-width:0}
+  .clabel{font:400 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;
+    color:var(--faint);margin-bottom:10px}
+  .chips{display:flex;flex-wrap:wrap;gap:4px 20px}
+  .chip{display:inline-flex;align-items:center;gap:7px;cursor:pointer;user-select:none;
+    font-size:13.5px;color:var(--ink);padding:2px 0;border-bottom:1px solid transparent;
+    transition:color .12s,opacity .12s,border-color .12s;white-space:nowrap}
+  .chip:hover{border-bottom-color:var(--ink)}
+  .chip.off{color:var(--faint);opacity:.62}
+  .chip.off .sw,.chip.off .dot{opacity:.3}
+  .chip .sw{width:26px;height:11px;flex:none;overflow:visible}
+  .chip .dot{width:9px;height:9px;flex:none;border-radius:50%}
+  .chip .n{font:400 11px/1 var(--mono);color:var(--faint);font-variant-numeric:tabular-nums}
+  .tools{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+  input[type=search]{background:transparent;border:0;border-bottom:1px solid var(--rule);
+    color:var(--ink);padding:4px 2px;font:13.5px var(--sans);width:170px;outline:none;
+    border-radius:0;-webkit-appearance:none}
+  input[type=search]::placeholder{color:var(--faint)}
+  input[type=search]:focus{border-bottom-color:var(--ink)}
+  button{background:transparent;border:1px solid var(--rule);color:var(--ink-2);
+    padding:5px 10px;font:400 10.5px/1.4 var(--mono);letter-spacing:.05em;
+    text-transform:uppercase;cursor:pointer;border-radius:0;transition:all .12s}
+  button:hover{border-color:var(--ink);color:var(--ink)}
+  button.on{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+  button.sq{width:27px;padding:5px 0;text-align:center;font-size:12px;letter-spacing:0}
+  .zread{font:400 11px/1 var(--mono);color:var(--faint);letter-spacing:.04em;
+    font-variant-numeric:tabular-nums;padding-left:4px;white-space:nowrap}
+
+  /* chart */
+  .chartbox{position:relative;padding:20px 0 2px}
+  svg{display:block;width:100%;height:auto;touch-action:pan-y}
+  .axis text{fill:var(--muted);font:400 11px var(--mono);font-variant-numeric:tabular-nums}
+  .axis .ttl{fill:var(--faint);font:400 9.5px var(--mono);letter-spacing:.14em;text-transform:uppercase}
+  .bar{cursor:crosshair}
+  .bar.hi .hit{fill:var(--ink);fill-opacity:.055;stroke:var(--ink);stroke-opacity:.34}
+  .bar.hi line{stroke-width:2}
+  .bar.hi circle.d0,.bar.hi circle.d1{r:3.4}
+  .bar.hi path.d1{stroke-width:1.7}
+
+  #tip{position:absolute;pointer-events:none;opacity:0;transform:translate(-50%,-100%);
+    background:#fffdf8;border:1px solid var(--ink);padding:11px 13px 12px;
+    font:13px/1.45 var(--sans);width:max-content;max-width:392px;z-index:9;
+    box-shadow:3px 3px 0 rgba(35,32,25,.08);transition:opacity .08s}
+  #tip .t{font:400 17px/1.18 var(--sans);letter-spacing:-.016em;margin-bottom:1px}
+  #tip .t2{font:400 15px/1.24 var(--serif);font-style:italic;color:var(--ink-2);margin-bottom:3px}
+  #tip .m{color:var(--muted);font-size:12.5px}
+  #tip .m.mono{font:400 10.5px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--faint);margin-top:1px}
+  #tip .badge{display:inline-flex;align-items:center;gap:6px;margin-top:7px;
+    font:400 10px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);
+    border:1px solid var(--rule);padding:2px 7px 3px}
+  #tip .lswatch{width:7px;height:7px;flex:none;border-radius:50%}
+  #tip .bio{font:14px/1.44 var(--serif);color:var(--ink);margin:9px 0 10px;
+    padding:9px 0 0;border-top:1px solid var(--rule-2)}
+  #tip .k{font:400 9.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;
+    color:var(--faint);display:inline-block;min-width:88px;vertical-align:baseline}
+  #tip .v{font-variant-numeric:tabular-nums}
+  #tip .nb{margin-top:8px;padding-top:7px;border-top:1px solid var(--rule);color:var(--ink-2);font-size:12.5px}
+
+  /* stats */
+  .stats{display:flex;flex-wrap:wrap;margin:0;border-bottom:1px solid var(--rule)}
+  .stat{flex:1 1 158px;padding:16px 20px 17px 0}
+  .stat b{display:block;font:400 27px/1.1 var(--sans);letter-spacing:-.022em;
+    font-variant-numeric:tabular-nums;margin-bottom:5px}
+  .stat span{font:400 9.5px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+
+  /* notes */
+  .notes{margin-top:36px;display:grid;grid-template-columns:1fr 1fr;gap:0 52px;
+    font:15.5px/1.56 var(--serif);color:var(--ink-2)}
+  .notes h2{grid-column:1/-1;font:400 10px/1 var(--mono);letter-spacing:.15em;
+    text-transform:uppercase;color:var(--faint);margin:0 0 15px}
+  .notes p{margin:0 0 14px}
+  .notes b{color:var(--ink);font-weight:400;font-style:italic}
+  .notes .fine{grid-column:1/-1;color:var(--muted);font-size:14px;
+    border-top:1px solid var(--rule);padding-top:14px;margin-top:5px}
+  .keyrow{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(238px,1fr));
+    gap:9px 26px;margin:0 0 22px;padding-bottom:20px;border-bottom:1px solid var(--rule-2)}
+  .keyrow div{display:flex;align-items:center;gap:9px;font:13.5px var(--sans);color:var(--ink-2)}
+  .keyrow i{color:var(--faint);font-style:normal;font-family:var(--mono);font-size:11px}
+  .keyrow svg{flex:none;width:auto}
+
+  @media (max-width:820px){
+    .wrap{padding:32px 18px 56px}
+    h1{font-size:29px}
+    .deck{font-size:16.5px}
+    .notes{grid-template-columns:1fr;gap:0}
+    .stat b{font-size:22px}
+    input[type=search]{width:142px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <p class="kicker">Construction timelines &middot; 1949&ndash;present</p>
+  <h1>How long it takes to build a nuclear reactor in America</h1>
+  <p class="deck">Every power reactor the United States has started building since 1949 &mdash; finished, abandoned, or still going up today. Each line runs from the day concrete was first poured to the day the reactor entered commercial service, or to the day the project was halted. Height is the reactor's net electrical capacity; color is its technology, or the licence it was built under if you switch it. <em>Hover any line for the company that built it, the reactor's history, and its licensing pathway.</em></p>
+</header>
+
+<div class="rule thick"></div>
+
+<div class="controls">
+  <div class="cgroup">
+    <div class="clabel">Outcome &mdash; click to show or hide</div>
+    <div class="chips" id="cats"></div>
+  </div>
+  <div class="cgroup">
+    <div class="clabel">Licence &mdash; click to show or hide</div>
+    <div class="chips" id="lics"></div>
+  </div>
+  <div class="cgroup">
+    <div class="clabel">Reactor type</div>
+    <div class="chips" id="types"></div>
+  </div>
+  <div class="cgroup">
+    <div class="clabel">Colour the lines by</div>
+    <div class="tools">
+      <button id="cby-type" class="on">Reactor type</button>
+      <button id="cby-lic">Licence</button>
+    </div>
+  </div>
+  <div class="cgroup">
+    <div class="clabel">Find</div>
+    <div class="tools">
+      <input type="search" id="q" placeholder="Search a plant&hellip;" autocomplete="off">
+      <button id="life" title="Draw a faint line from commercial operation to permanent shutdown">Operating lives</button>
+    </div>
+  </div>
+  <div class="cgroup">
+    <div class="clabel">Timeline &mdash; scroll to zoom, shift&#8209;drag to pan</div>
+    <div class="tools">
+      <button class="sq" id="zout" title="Zoom out">&minus;</button>
+      <button class="sq" id="zin" title="Zoom in">+</button>
+      <button class="sq" id="pl" title="Earlier">&#9664;</button>
+      <button class="sq" id="pr" title="Later">&#9654;</button>
+      <button class="era" data-a="1953" data-b="1972">1950s&ndash;60s</button>
+      <button class="era" data-a="1966" data-b="1983">Boom</button>
+      <button class="era" data-a="1979" data-b="1997">Post&#8209;TMI</button>
+      <button class="era" data-a="2004" data-b="2036">Modern</button>
+      <button id="reset">All</button>
+      <span class="zread" id="zread"></span>
+    </div>
+  </div>
+</div>
+
+<div class="chartbox">
+  <svg id="chart" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div id="tip"></div>
+</div>
+
+<div class="stats" id="stats"></div>
+
+<div class="notes">
+  <h2>How to read this</h2>
+  <div class="keyrow">
+    <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="38" y2="6" stroke="#2f6d96" stroke-width="1.1"></line><circle cx="2.4" cy="6" r="2.2" fill="#2f6d96"></circle><circle cx="38" cy="6" r="2.5" fill="#2f6d96"></circle></svg> Completed and operated commercially</div>
+    <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="38" y2="6" stroke="#2f6d96" stroke-width="1.1" stroke-opacity=".8"></line><circle cx="2.4" cy="6" r="2.2" fill="#2f6d96"></circle><circle cx="38" cy="6" r="2.5" fill="#f6f3ec" stroke="#2f6d96" stroke-width=".9"></circle></svg> Completed but never commercial <i>hollow end</i></div>
+    <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="33" y2="6" stroke="#2f6d96" stroke-width="1.1" stroke-dasharray="3 2.2"></line><circle cx="2.4" cy="6" r="2.2" fill="#2f6d96"></circle><path d="M35.6 3.4 L40.4 8.6 M40.4 3.4 L35.6 8.6" stroke="#2f6d96" stroke-width="1.1" fill="none"></path></svg> Started, never finished <i>dashed, &#10005;</i></div>
+    <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="19" y2="6" stroke="#2f6d96" stroke-width="1.1"></line><line x1="19" y1="6" x2="35" y2="6" stroke="#2f6d96" stroke-width="1.1" stroke-dasharray="1.4 2.1"></line><circle cx="2.4" cy="6" r="2.2" fill="#2f6d96"></circle><path d="M40.4 6 L38 3.4 L35.6 6 L38 8.6 Z" fill="#f6f3ec" stroke="#2f6d96" stroke-width=".9"></path></svg> Being built now <i>dotted = projected</i></div>
+    <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="33" y2="6" stroke="#2f6d96" stroke-width="1" stroke-opacity=".45" stroke-dasharray=".9 2.4"></line><circle cx="2.4" cy="6" r="2" fill="#f6f3ec" stroke="#2f6d96" stroke-width=".9" stroke-opacity=".6"></circle><rect x="34.2" y="3.8" width="4.4" height="4.4" fill="#f6f3ec" stroke="#2f6d96" stroke-width=".9" stroke-opacity=".6"></rect></svg> Designed only, nothing built <i>faint dots, hollow</i></div>
+  </div>
+  <p><b>Vertical position is net electrical capacity in megawatts.</b> A handful of demonstration and research reactors currently being built produce no electricity for the grid, or have not published a net rating; those sit on the zero line. Reactors with identical capacity and identical dates &mdash; sister units at the same plant, poured together and finished together &mdash; are nudged a few pixels apart so you can tell them apart.</p>
+  <p><b>What counts as "never commercial."</b> Reactors in that category were built and, in most cases, generated power, but were government demonstration or experimental units rather than utility products sold into a rate base &mdash; Shippingport, EBR&#8209;I and EBR&#8209;II, the Sodium Reactor Experiment, Hanford N, Elk River, Hallam and their peers. Shoreham is the exception that proves the category: it was finished, licensed to full power, then sold to New York State for one dollar and dismantled without ever selling a kilowatt&#8209;hour commercially. Utility&#8209;owned reactors that did operate commercially, however briefly, stay in the commercial group &mdash; including Three Mile Island 2, which ran for three months.</p>
+  <p><b>Abandoned projects</b> end on the date construction was formally halted or cancelled, which is not always the date work physically stopped; several sites sat in limbo for years first. Bellefonte, Zimmer and WNP&#8209;1 were all more than half built. Zimmer was finished as a coal plant. Watts Bar 2, by contrast, appears as a completed reactor with a 43&#8209;year line: it was mothballed in 1985 and restarted in 2007.</p>
+  <p><b>Built versus designed only.</b> The five outcome toggles separate reactors that physically exist from those that do not. The first two categories are finished reactors that ran. "Part built, then abandoned" reactors have real concrete and, in several cases, an installed pressure vessel. "Being built now" means safety&#8209;related nuclear construction has actually begun. The last category, drawn in faint dots with hollow markers, is <i>design and licensing only</i> &mdash; a permit, an application under review, or a federal agreement exists, but no reactor has been built. Several of these projects have held publicised groundbreakings; those events were site clearing, transmission work or gas generation, not reactor construction, so the dates shown are the developer's or the regulator's current targets rather than a record of work done. Among the currently licensed advanced&#8209;reactor cohort, only Hermes 1, Hermes 2 and Kemmerer 1 have begun safety&#8209;related construction.</p>
+  <p><b>The licensing pathway</b> is a second, independent way to read the chart, and you can colour the lines by it. Almost every commercial reactor in America was licensed in two steps under 10&nbsp;CFR Part&nbsp;50: a construction permit first, then a separate operating licence years later once the plant was finished and inspected. Reactors that only ever got the permit &mdash; every cancelled project, plus the demonstration reactors going up right now &mdash; are a different bucket, and the split makes the abandonment wave of the late 1970s legible at a glance. Part&nbsp;52, introduced in the 1990s, replaced the two steps with a single combined licence; Vogtle 3 and 4 are the only reactors ever completed under it. Federally owned reactors, from the early national&#8209;laboratory experiments through today's Department of Energy pilot&#8209;programme units at Idaho, were never NRC&#8209;licensed at all and are authorised by DOE instead. Military reactors &mdash; the Army's compact plants, the Air Force's PM&#8209;1, the Navy's land&#8209;based prototypes &mdash; sit outside civilian licensing entirely. A handful of projects, Bodega Bay and Black Fox among them, never received any licence before being withdrawn. Note that there is no 10&nbsp;CFR Part&nbsp;57 for reactors; the NRC's new technology&#8209;inclusive framework is Part&nbsp;53, and no reactor has yet been licensed under it, so it does not appear here.</p>
+  <p><b>Dates in the tooltip marked <i>approximate</i></b> are either estimated from a start year with no published day, or are forward projections. Reactors under construction today end at their operator's projected completion date, drawn as a dotted extension past the present.</p>
+  <p><b>The energy figure on hover is an estimate</b>, not metered output: it multiplies net capacity by time online by a capacity factor typical of the reactor's operating era &mdash; about 60% for units that ran mainly in the 1970s and 80s, about 88% for units running in the 2000s and later. Treat it as an order of magnitude for comparing reactors, not as a reported total. Ownership reflects the most recent public transfer; several shut&#8209;down plants are now held by decommissioning specialists rather than the original utility, and a few cancelled sites have passed to industrial developers, port authorities or state parks.</p>
+  <p class="fine">Data compiled from public records of U.S. commercial power reactors, cancelled reactor projects, and current construction permits. Capacities are net electrical output in megawatts as designed or as last uprated. The per&#8209;reactor histories shown on hover are short summaries of the public record and are intended as orientation, not as a citable source. To move around the timeline: scroll or pinch to zoom under the cursor, drag left or right to zoom to a selection, shift&#8209;drag to pan, and double&#8209;click or press All to zoom back out. Alt&#8209;click a reactor type or a licence to isolate it.</p>
+</div>
+</div>
+
+<script>
+/* U.S. nuclear reactor construction timelines.
+   name|unit|type|model|mw|start|end|closed|cat|approx|note|loc|built|own|lic|licfam */
+var RAW=`
+Arkansas Nuclear One|1|PWR|B&W|836|1968-10-01|1974-05-21||comm|||Russellville, Arkansas|Arkansas Power & Light|Entergy Arkansas|AEC construction permit 1968 and operating licence 1974, 10 CFR Part 50|p50ol
+Arkansas Nuclear One|2|PWR|Combustion Engineering|988|1968-12-06|1978-09-01||comm|||Russellville, Arkansas|Arkansas Power & Light|Entergy Arkansas|AEC construction permit 1972, NRC operating licence 1978, 10 CFR Part 50|p50ol
+Beaver Valley|1|PWR|Westinghouse 3-loop|908|1970-06-26|1976-07-02||comm|||Shippingport, Pennsylvania|Duquesne Light|Vistra|AEC construction permit 1970, NRC operating licence 1976, 10 CFR Part 50|p50ol
+Beaver Valley|2|PWR|Westinghouse 3-loop|905|1974-05-03|1987-08-14||comm|||Shippingport, Pennsylvania|Duquesne Light|Vistra|AEC construction permit 1974, NRC operating licence 1987, 10 CFR Part 50|p50ol
+Big Rock Point|1|BWR|BWR-1|67|1960-05-01|1963-03-29|1997-08-29|comm|||Charlevoix, Michigan|Consumers Power|Holtec Decommissioning International|AEC construction permit 1960, full-power operating licence 1964, Part 50|p50ol
+Braidwood|1|PWR|Westinghouse 4-loop|1194|1975-08-01|1988-07-29||comm|||Braceville, Illinois|Commonwealth Edison|Constellation Energy|NRC construction permit 1975 and operating licence 1987, 10 CFR Part 50|p50ol
+Braidwood|2|PWR|Westinghouse 4-loop|1160|1975-08-01|1988-10-17||comm|||Braceville, Illinois|Commonwealth Edison|Constellation Energy|NRC construction permit 1975 and operating licence 1988, 10 CFR Part 50|p50ol
+Browns Ferry|1|BWR|BWR-4|1200|1967-05-01|1974-08-01||comm|||Athens, Alabama|Tennessee Valley Authority|Tennessee Valley Authority|AEC construction permit 1967 and operating licence 1973, 10 CFR Part 50|p50ol
+Browns Ferry|2|BWR|BWR-4|1200|1967-05-01|1975-03-01||comm|||Athens, Alabama|Tennessee Valley Authority|Tennessee Valley Authority|AEC construction permit 1967 and operating licence 1974, 10 CFR Part 50|p50ol
+Browns Ferry|3|BWR|BWR-4|1210|1968-07-01|1977-03-01||comm|||Athens, Alabama|Tennessee Valley Authority|Tennessee Valley Authority|AEC construction permit 1968, NRC operating licence 1976, 10 CFR Part 50|p50ol
+Brunswick|1|BWR|BWR-4|938|1970-02-07|1977-03-18||comm|||Southport, North Carolina|Carolina Power & Light|Duke Energy Progress|AEC construction permit 1970, NRC operating licence 1976, 10 CFR Part 50|p50ol
+Brunswick|2|BWR|BWR-4|932|1970-02-07|1975-11-03||comm|||Southport, North Carolina|Carolina Power & Light|Duke Energy Progress|AEC construction permit 1970 and operating licence 1974, 10 CFR Part 50|p50ol
+Byron|1|PWR|Westinghouse 4-loop|1164|1975-04-01|1985-09-16||comm|||Byron, Illinois|Commonwealth Edison|Constellation Energy|NRC construction permit 1975 and operating licence 1985, 10 CFR Part 50|p50ol
+Byron|2|PWR|Westinghouse 4-loop|1136|1975-04-01|1987-08-02||comm|||Byron, Illinois|Commonwealth Edison|Constellation Energy|NRC construction permit 1975 and operating licence 1987, 10 CFR Part 50|p50ol
+Callaway|1|PWR|Westinghouse 4-loop|1215|1975-09-01|1984-12-19||comm|||Fulton, Missouri|Union Electric|Ameren Missouri|NRC construction permit 1976 and operating licence 1984, 10 CFR Part 50|p50ol
+Calvert Cliffs|1|PWR|Combustion Engineering|877|1968-06-01|1977-05-08||comm|||Lusby, Maryland|Baltimore Gas and Electric|Constellation Energy|AEC construction permit 1969 and operating licence 1974, 10 CFR Part 50|p50ol
+Calvert Cliffs|2|PWR|Combustion Engineering|855|1968-06-01|1977-04-01||comm|||Lusby, Maryland|Baltimore Gas and Electric|Constellation Energy|AEC construction permit 1969, NRC operating licence 1976, 10 CFR Part 50|p50ol
+Catawba|1|PWR|Westinghouse 4-loop|1160|1974-05-01|1985-06-29||comm|||York, South Carolina|Duke Power|Duke Energy Carolinas|NRC construction permit 1975 and operating licence 1985, 10 CFR Part 50|p50ol
+Catawba|2|PWR|Westinghouse 4-loop|1150|1974-05-01|1986-08-19||comm|||York, South Carolina|Duke Power|Duke Energy Carolinas|NRC construction permit 1975 and operating licence 1986, 10 CFR Part 50|p50ol
+Clinton|1|BWR|BWR-6|1062|1975-10-01|1987-11-24||comm|||Clinton, Illinois|Illinois Power|Constellation Energy|NRC construction permit 1976 and operating licence 1987, 10 CFR Part 50|p50ol
+Columbia|1|BWR|BWR-5|1131|1972-08-01|1984-12-13||comm|||Richland, Washington|Washington Public Power Supply System|Energy Northwest|AEC construction permit 1973, NRC operating licence 1984, 10 CFR Part 50|p50ol
+Comanche Peak|1|PWR|Westinghouse 4-loop|1205|1974-12-19|1990-08-13||comm|||Glen Rose, Texas|Texas Utilities Electric|Vistra|AEC construction permit 1974, NRC operating licence 1990, 10 CFR Part 50|p50ol
+Comanche Peak|2|PWR|Westinghouse 4-loop|1195|1974-12-19|1993-08-03||comm|||Glen Rose, Texas|Texas Utilities Electric|Vistra|AEC construction permit 1974, NRC operating licence 1993, 10 CFR Part 50|p50ol
+Connecticut Yankee|1|PWR|Westinghouse|582|1964-05-01|1968-01-01|1996-12-05|comm|||Haddam Neck, Connecticut|Connecticut Yankee Atomic Power Company|Connecticut Yankee Atomic Power Company|AEC construction permit 1964; AEC full-term operating licence 1974|p50ol
+Cooper|1|BWR|BWR-4|769|1968-06-01|1974-07-01||comm|||Brownville, Nebraska|Nebraska Public Power District|Nebraska Public Power District|AEC construction permit 1968 and operating licence 1974, 10 CFR Part 50|p50ol
+Crystal River|3|PWR|B&W|860|1968-09-25|1977-03-13|2013-02-05|comm|||Crystal River, Florida|Florida Power Corporation|Duke Energy Florida (ADP decommissioning)|AEC construction permit 1968, NRC operating licence 1976, 10 CFR Part 50|p50ol
+Davis–Besse|1|PWR|B&W|894|1970-09-01|1978-07-31||comm|||Oak Harbor, Ohio|Toledo Edison|Vistra|AEC construction permit 1971, NRC operating licence 1977, 10 CFR Part 50|p50ol
+Diablo Canyon|1|PWR|Westinghouse 4-loop|1138|1968-04-23|1985-05-07||comm|||Avila Beach, California|Pacific Gas and Electric|Pacific Gas and Electric|AEC construction permit 1968, NRC full-power operating licence 1984, Part 50|p50ol
+Diablo Canyon|2|PWR|Westinghouse 4-loop|1118|1970-12-09|1986-03-13||comm|||Avila Beach, California|Pacific Gas and Electric|Pacific Gas and Electric|AEC construction permit 1970, NRC operating licence 1985, 10 CFR Part 50|p50ol
+Donald C. Cook|1|PWR|Westinghouse 4-loop|1020|1969-03-25|1975-08-27||comm|||Bridgman, Michigan|Indiana & Michigan Electric|Indiana Michigan Power (AEP)|AEC construction permit 1969 and operating licence 1974, 10 CFR Part 50|p50ol
+Donald C. Cook|2|PWR|Westinghouse 4-loop|1090|1969-03-25|1978-07-01||comm|||Bridgman, Michigan|Indiana & Michigan Electric|Indiana Michigan Power (AEP)|AEC construction permit 1969, NRC operating licence 1977, 10 CFR Part 50|p50ol
+Dresden|1|BWR|BWR-1|197|1956-05-01|1960-07-04|1978-10-31|comm|||Morris, Illinois|Commonwealth Edison|Constellation Energy|AEC construction permit; AEC operating licence 1959, 10 CFR Part 50|p50ol
+Dresden|2|BWR|BWR-3|894|1966-01-10|1970-06-09||comm|||Morris, Illinois|Commonwealth Edison|Constellation Energy|AEC construction permit 1966, AEC provisional operating licence 1969|p50ol
+Dresden|3|BWR|BWR-3|879|1966-10-14|1971-11-16||comm|||Morris, Illinois|Commonwealth Edison|Constellation Energy|AEC construction permit 1966 and operating licence 1971, 10 CFR Part 50|p50ol
+Duane Arnold|1|BWR|BWR-4|601|1970-05-22|1975-02-01|2020-08-10|comm||Restart in progress|Palo, Iowa|Iowa Electric Light and Power|NextEra Energy Resources|AEC construction permit 1970 and operating licence 1974, 10 CFR Part 50|p50ol
+Edwin I. Hatch|1|BWR|BWR-4|924|1968-09-30|1975-12-31||comm|||Baxley, Georgia|Georgia Power|Georgia Power|AEC construction permit 1969 and operating licence 1974, 10 CFR Part 50|p50ol
+Edwin I. Hatch|2|BWR|BWR-4|924|1972-02-01|1979-09-05||comm|||Baxley, Georgia|Georgia Power|Georgia Power|AEC construction permit 1972, NRC operating licence 1978, 10 CFR Part 50|p50ol
+Enrico Fermi|2|BWR|BWR-4|1115|1972-09-26|1988-01-23||comm|||Newport, Michigan|Detroit Edison|DTE Energy|AEC construction permit 1972, NRC operating licence 1985, 10 CFR Part 50|p50ol
+Fort Calhoun|1|PWR|Combustion Engineering|482|1968-06-07|1973-08-09|2016-10-24|comm|||Blair, Nebraska|Omaha Public Power District|Omaha Public Power District|AEC construction permit 1968 and operating licence 1973, 10 CFR Part 50|p50ol
+Fort St. Vrain|1|HTGR|General Atomics|330|1968-09-01|1979-07-01|1989-08-29|comm||Only U.S. commercial high-temperature gas reactor|Platteville, Colorado|Public Service Company of Colorado|Xcel Energy|AEC construction permit; AEC operating licence 1973, 10 CFR Part 50|p50ol
+Ginna|1|PWR|Westinghouse 2-loop|560|1966-04-25|1970-06-01||comm|||Ontario, New York|Rochester Gas and Electric|Constellation Energy|AEC construction permit 1966 and operating licence 1969, 10 CFR Part 50|p50ol
+Grand Gulf|1|BWR|BWR-6|1401|1974-05-04|1985-07-01||comm|||Port Gibson, Mississippi|Mississippi Power & Light|Entergy (System Energy Resources)|AEC construction permit 1974, NRC operating licence 1984, 10 CFR Part 50|p50ol
+H. B. Robinson|2|PWR|Westinghouse 3-loop|735|1967-04-13|1971-03-07||comm|||Hartsville, South Carolina|Carolina Power & Light|Duke Energy Progress|AEC construction permit 1967 and operating licence 1970, 10 CFR Part 50|p50ol
+Hope Creek|1|BWR|BWR-4|1172|1976-03-01|1986-12-20||comm|||Hancocks Bridge, New Jersey|Public Service Electric and Gas|PSEG Nuclear|AEC construction permit 1974, NRC operating licence 1986, 10 CFR Part 50|p50ol
+Humboldt Bay|3|BWR|BWR-1|63|1960-11-01|1963-08-01|1976-07-02|comm|||Eureka, California|Pacific Gas and Electric|Pacific Gas and Electric|AEC construction permit; AEC operating licence 1962, 10 CFR Part 50|p50ol
+Indian Point|1|PWR|Babcock & Wilcox|257|1956-05-01|1962-10-01|1974-10-31|comm|||Buchanan, New York|Consolidated Edison|Holtec Decommissioning International|AEC construction permit; AEC operating licence 1962, 10 CFR Part 50|p50ol
+Indian Point|2|PWR|Westinghouse 4-loop|998|1966-10-14|1974-08-01|2020-04-30|comm|||Buchanan, New York|Consolidated Edison|Holtec Decommissioning International|AEC construction permit 1966 and operating licence 1973, 10 CFR Part 50|p50ol
+Indian Point|3|PWR|Westinghouse 4-loop|1030|1968-11-01|1976-08-30|2021-04-30|comm|||Buchanan, New York|Consolidated Edison; completed by New York Power Authority|Holtec Decommissioning International|AEC construction permit 1969, NRC operating licence 1975, 10 CFR Part 50|p50ol
+James A. FitzPatrick|1|BWR|BWR-4|813|1968-09-01|1975-07-28||comm|||Scriba, New York|Power Authority of the State of New York|Constellation Energy|AEC construction permit 1970 and operating licence 1974, 10 CFR Part 50|p50ol
+Joseph M. Farley|1|PWR|Westinghouse 3-loop|874|1970-10-01|1977-12-01||comm|||Columbia, Alabama|Alabama Power|Alabama Power|AEC construction permit 1972, NRC operating licence 1977, 10 CFR Part 50|p50ol
+Joseph M. Farley|2|PWR|Westinghouse 3-loop|883|1970-10-01|1981-07-30||comm|||Columbia, Alabama|Alabama Power|Alabama Power|AEC construction permit 1972, NRC operating licence 1981, 10 CFR Part 50|p50ol
+Kewaunee|1|PWR|Westinghouse 2-loop|566|1968-08-06|1974-06-16|2013-05-07|comm|||Carlton, Wisconsin|Wisconsin Public Service|EnergySolutions|AEC construction permit 1968 and operating licence 1973, 10 CFR Part 50|p50ol
+LaSalle County|1|BWR|BWR-5|1137|1973-09-10|1984-01-01||comm|||Marseilles, Illinois|Commonwealth Edison|Constellation Energy|AEC construction permit 1973, NRC operating licence 1982, 10 CFR Part 50|p50ol
+LaSalle County|2|BWR|BWR-5|1140|1973-09-10|1984-10-19||comm|||Marseilles, Illinois|Commonwealth Edison|Constellation Energy|AEC construction permit 1973, NRC operating licence 1983, 10 CFR Part 50|p50ol
+Limerick|1|BWR|BWR-5|1134|1974-06-19|1986-02-01||comm|||Limerick Township, Pennsylvania|Philadelphia Electric|Constellation Energy|AEC construction permit 1974, NRC operating licence 1985, 10 CFR Part 50|p50ol
+Limerick|2|BWR|BWR-5|1134|1974-06-19|1990-01-08||comm|||Limerick Township, Pennsylvania|Philadelphia Electric|Constellation Energy|AEC construction permit 1974, NRC operating licence 1989, 10 CFR Part 50|p50ol
+Maine Yankee|1|PWR|Combustion Engineering|860|1968-10-01|1972-12-28|1997-08-01|comm|||Wiscasset, Maine|Maine Yankee Atomic Power Company|Maine Yankee Atomic Power Company|AEC construction permit 1968, full-power operating licence 1973, Part 50|p50ol
+McGuire|1|PWR|Westinghouse 4-loop|1158|1971-04-01|1981-12-01||comm|||Huntersville, North Carolina|Duke Power|Duke Energy|AEC construction permit 1973, NRC operating licence 1981, 10 CFR Part 50|p50ol
+McGuire|2|PWR|Westinghouse 4-loop|1158|1971-04-01|1984-03-01||comm|||Huntersville, North Carolina|Duke Power|Duke Energy|AEC construction permit 1973, NRC operating licence 1983, 10 CFR Part 50|p50ol
+Millstone|1|BWR|BWR-3|641|1966-05-01|1970-12-28|1998-07-21|comm|||Waterford, Connecticut|Northeast Utilities|Dominion Energy|AEC construction permit 1966 and operating licence 1970, 10 CFR Part 50|p50ol
+Millstone|2|PWR|Combustion Engineering|869|1969-11-01|1975-12-26||comm|||Waterford, Connecticut|Northeast Utilities|Dominion Energy|AEC construction permit 1970, NRC operating licence 1975, 10 CFR Part 50|p50ol
+Millstone|3|PWR|Westinghouse 4-loop|1210|1974-08-09|1986-04-23||comm|||Waterford, Connecticut|Northeast Utilities|Dominion Energy|AEC construction permit 1974, NRC operating licence 1986, 10 CFR Part 50|p50ol
+Monticello|1|BWR|BWR-3|628|1967-06-19|1971-06-30||comm|||Monticello, Minnesota|Northern States Power|Xcel Energy|AEC construction permit 1967, AEC provisional operating licence 1970|p50ol
+Nine Mile Point|1|BWR|BWR-2|613|1965-04-12|1969-12-01||comm|||Scriba, New York|Niagara Mohawk Power|Constellation Energy|AEC construction permit 1965, AEC provisional operating licence 1969|p50ol
+Nine Mile Point|2|BWR|BWR-5|1277|1975-08-01|1988-03-11||comm|||Scriba, New York|Niagara Mohawk Power|Constellation Energy|AEC construction permit 1974, NRC operating licence 1987, 10 CFR Part 50|p50ol
+North Anna|1|PWR|Westinghouse 3-loop|948|1971-02-19|1978-06-06||comm|||Mineral, Virginia|Virginia Electric and Power|Dominion Energy|AEC construction permit 1971, NRC operating licence 1978, 10 CFR Part 50|p50ol
+North Anna|2|PWR|Westinghouse 3-loop|944|1971-02-19|1980-12-14||comm|||Mineral, Virginia|Virginia Electric and Power|Dominion Energy|AEC construction permit 1971, NRC operating licence 1980, 10 CFR Part 50|p50ol
+Oconee|1|PWR|B&W|847|1967-11-06|1973-07-15||comm|||Seneca, South Carolina|Duke Power|Duke Energy|AEC construction permit 1967 and operating licence 1973, 10 CFR Part 50|p50ol
+Oconee|2|PWR|B&W|848|1967-11-06|1974-09-09||comm|||Seneca, South Carolina|Duke Power|Duke Energy|AEC construction permit 1967 and operating licence 1973, 10 CFR Part 50|p50ol
+Oconee|3|PWR|B&W|859|1967-11-06|1974-12-16||comm|||Seneca, South Carolina|Duke Power|Duke Energy|AEC construction permit 1967 and operating licence 1974, 10 CFR Part 50|p50ol
+Oyster Creek|1|BWR|BWR-2|619|1964-12-15|1969-12-23|2018-09-17|comm|||Lacey Township, New Jersey|Jersey Central Power & Light|Holtec Decommissioning International|AEC construction permit 1964, AEC provisional operating licence 1969|p50ol
+Palisades|1|PWR|Combustion Engineering|805|1967-03-14|1971-12-31|2022-05-20|comm||Restart in progress|Covert Township, Michigan|Consumers Power|Holtec International|AEC construction permit 1967, AEC provisional operating licence 1971|p50ol
+Palo Verde|1|PWR|CE System 80|1311|1976-05-25|1986-01-28||comm|||Wintersburg, Arizona|Arizona Public Service|Arizona Public Service|NRC construction permit 1976 and operating licence 1985, 10 CFR Part 50|p50ol
+Palo Verde|2|PWR|CE System 80|1314|1976-06-01|1986-09-19||comm|||Wintersburg, Arizona|Arizona Public Service|Arizona Public Service|NRC construction permit 1976 and operating licence 1986, 10 CFR Part 50|p50ol
+Palo Verde|3|PWR|CE System 80|1312|1976-06-01|1988-01-08||comm|||Wintersburg, Arizona|Arizona Public Service|Arizona Public Service|NRC construction permit 1976 and operating licence 1987, 10 CFR Part 50|p50ol
+Peach Bottom|2|BWR|BWR-4|1300|1968-01-31|1974-07-05||comm|||Delta, Pennsylvania|Philadelphia Electric|Constellation Energy|AEC construction permit 1968 and operating licence 1973, 10 CFR Part 50|p50ol
+Peach Bottom|3|BWR|BWR-4|1331|1968-01-31|1974-12-23||comm|||Delta, Pennsylvania|Philadelphia Electric|Constellation Energy|AEC construction permit 1968 and operating licence 1974, 10 CFR Part 50|p50ol
+Perry|1|BWR|BWR-6|1240|1974-10-01|1987-11-18||comm|||North Perry, Ohio|Cleveland Electric Illuminating|Vistra|NRC construction permit 1977 and operating licence 1986, 10 CFR Part 50|p50ol
+Pilgrim|1|BWR|BWR-3|677|1968-08-26|1972-12-09|2019-05-31|comm|||Plymouth, Massachusetts|Boston Edison|Holtec Decommissioning International|AEC construction permit 1968 and operating licence 1972, 10 CFR Part 50|p50ol
+Point Beach|1|PWR|Westinghouse 2-loop|591|1967-07-19|1970-12-21||comm|||Two Rivers, Wisconsin|Wisconsin Electric Power|NextEra Energy|AEC construction permit 1967 and operating licence 1970, 10 CFR Part 50|p50ol
+Point Beach|2|PWR|Westinghouse 2-loop|591|1968-07-25|1972-10-01||comm|||Two Rivers, Wisconsin|Wisconsin Electric Power|NextEra Energy|AEC construction permit 1968, AEC provisional operating licence 1971|p50ol
+Prairie Island|1|PWR|Westinghouse 2-loop|522|1968-06-25|1973-12-16||comm|||Red Wing, Minnesota|Northern States Power|Xcel Energy|AEC construction permit 1968, AEC provisional operating licence 1973|p50ol
+Prairie Island|2|PWR|Westinghouse 2-loop|519|1969-06-25|1974-12-21||comm|||Red Wing, Minnesota|Northern States Power|Xcel Energy|AEC construction permit 1968 and operating licence 1974, 10 CFR Part 50|p50ol
+Quad Cities|1|BWR|BWR-4|908|1967-02-15|1973-02-18||comm|||Cordova, Illinois|Commonwealth Edison|Constellation Energy|AEC construction permit 1967 and operating licence 1972, 10 CFR Part 50|p50ol
+Quad Cities|2|BWR|BWR-4|911|1967-02-15|1973-03-10||comm|||Cordova, Illinois|Commonwealth Edison|Constellation Energy|AEC construction permit 1967 and operating licence 1972, 10 CFR Part 50|p50ol
+Rancho Seco|1|PWR|B&W|873|1969-04-01|1975-04-17|1989-06-23|comm||Closed by voter referendum|Herald, California|Sacramento Municipal Utility District|Sacramento Municipal Utility District|AEC construction permit; AEC operating licence 1974, 10 CFR Part 50|p50ol
+River Bend|1|BWR|BWR-6|967|1977-03-25|1986-06-16||comm|||St. Francisville, Louisiana|Gulf States Utilities|Entergy Louisiana|NRC construction permit 1977 and operating licence 1985, 10 CFR Part 50|p50ol
+Salem|1|PWR|Westinghouse 4-loop|1169|1968-09-25|1977-06-30||comm|||Lower Alloways Creek, New Jersey|Public Service Electric and Gas|PSEG Nuclear|AEC construction permit 1968, NRC operating licence 1976, 10 CFR Part 50|p50ol
+Salem|2|PWR|Westinghouse 4-loop|1158|1968-09-25|1981-10-31||comm|||Lower Alloways Creek, New Jersey|Public Service Electric and Gas|PSEG Nuclear|AEC construction permit 1968, NRC operating licence 1981, 10 CFR Part 50|p50ol
+San Onofre|1|PWR|Westinghouse|436|1964-07-16|1968-01-01|1992-11-30|comm|||San Clemente, California|Southern California Edison|Southern California Edison|AEC construction permit 1964 and operating licence 1967, 10 CFR Part 50|p50ol
+San Onofre|2|PWR|Combustion Engineering|1070|1974-03-01|1983-08-08|2013-06-07|comm|||San Clemente, California|Southern California Edison|Southern California Edison|AEC construction permit 1973, NRC operating licence 1982, 10 CFR Part 50|p50ol
+San Onofre|3|PWR|Combustion Engineering|1180|1974-03-01|1984-04-01|2013-06-07|comm|||San Clemente, California|Southern California Edison|Southern California Edison|AEC construction permit 1973, NRC operating licence 1982, 10 CFR Part 50|p50ol
+Seabrook|1|PWR|Westinghouse 4-loop|1246|1976-07-07|1990-03-15||comm|||Seabrook, New Hampshire|Public Service Company of New Hampshire|NextEra Energy|NRC construction permit 1976 and operating licence 1990, 10 CFR Part 50|p50ol
+Sequoyah|1|PWR|Westinghouse 4-loop|1152|1970-05-27|1981-07-01||comm|||Soddy-Daisy, Tennessee|Tennessee Valley Authority|Tennessee Valley Authority|AEC construction permit 1970, NRC operating licence 1980, 10 CFR Part 50|p50ol
+Sequoyah|2|PWR|Westinghouse 4-loop|1139|1970-05-27|1982-06-01||comm|||Soddy-Daisy, Tennessee|Tennessee Valley Authority|Tennessee Valley Authority|AEC construction permit 1970, NRC operating licence 1981, 10 CFR Part 50|p50ol
+Shearon Harris|1|PWR|Westinghouse 3-loop|964|1978-01-28|1987-05-02||comm|||New Hill, North Carolina|Carolina Power & Light|Duke Energy Progress|NRC construction permit and operating licence, 10 CFR Part 50, 1978 and 1987|p50ol
+South Texas|1|PWR|Westinghouse 4-loop|1280|1975-12-22|1988-08-25||comm|||Bay City, Texas|Houston Lighting & Power|Constellation, CPS Energy, Austin Energy|NRC construction permit and operating licence, 10 CFR Part 50, 1975 and 1988|p50ol
+South Texas|2|PWR|Westinghouse 4-loop|1280|1975-12-22|1989-06-19||comm|||Bay City, Texas|Houston Lighting & Power|Constellation, CPS Energy, Austin Energy|NRC construction permit and operating licence, 10 CFR Part 50, 1975 and 1989|p50ol
+St. Lucie|1|PWR|Combustion Engineering|981|1970-07-01|1976-03-01||comm|||Jensen Beach, Florida|Florida Power & Light|Florida Power & Light (NextEra)|AEC construction permit 1970, NRC operating licence 1976, 10 CFR Part 50|p50ol
+St. Lucie|2|PWR|Combustion Engineering|987|1977-06-02|1983-06-10||comm|||Jensen Beach, Florida|Florida Power & Light|Florida Power & Light (NextEra), FMPA, OUC|NRC construction permit and operating licence, 10 CFR Part 50, 1977 and 1983|p50ol
+Surry|1|PWR|Westinghouse 3-loop|838|1968-06-25|1972-12-22||comm|||Surry, Virginia|Virginia Electric and Power|Dominion Energy Virginia|AEC construction permit and operating licence, 10 CFR Part 50, 1968 and 1972|p50ol
+Surry|2|PWR|Westinghouse 3-loop|838|1968-06-25|1973-05-01||comm|||Surry, Virginia|Virginia Electric and Power|Dominion Energy Virginia|AEC construction permit and operating licence, 10 CFR Part 50, 1968 and 1973|p50ol
+Susquehanna|1|BWR|BWR-5|1257|1973-11-02|1982-11-12||comm|||Berwick, Pennsylvania|Pennsylvania Power & Light|Talen Energy, Allegheny Electric Co-op|AEC construction permit 1973, NRC operating licence 1982, 10 CFR Part 50|p50ol
+Susquehanna|2|BWR|BWR-5|1257|1973-11-02|1984-06-27||comm|||Berwick, Pennsylvania|Pennsylvania Power & Light|Talen Energy, Allegheny Electric Co-op|AEC construction permit 1973, NRC operating licence 1984, 10 CFR Part 50|p50ol
+Three Mile Island|1|PWR|B&W|819|1968-05-18|1974-09-02|2019-09-20|comm||Restart in progress|Middletown, Pennsylvania|Metropolitan Edison|Constellation Energy (restart underway)|AEC construction permit and operating licence, 10 CFR Part 50, 1968 and 1974|p50ol
+Three Mile Island|2|PWR|B&W|880|1969-11-01|1978-12-30|1979-03-28|comm||Partial core melt after 3 months of commercial operation|Middletown, Pennsylvania|Metropolitan Edison|EnergySolutions (TMI-2 Solutions)|AEC construction permit 1969, NRC operating licence 1978, 10 CFR Part 50|p50ol
+Trojan|1|PWR|Westinghouse|1095|1970-02-01|1976-05-20|1992-11-09|comm|||Rainier, Oregon|Portland General Electric|Portland General Electric|AEC construction permit 1971, NRC operating licence 1975, 10 CFR Part 50|p50ol
+Turkey Point|3|PWR|Westinghouse 3-loop|829|1967-04-27|1972-12-14||comm|||Homestead, Florida|Florida Power & Light|Florida Power & Light (NextEra)|AEC construction permit and operating licence, 10 CFR Part 50, 1967 and 1972|p50ol
+Turkey Point|4|PWR|Westinghouse 3-loop|821|1967-04-27|1973-09-07||comm|||Homestead, Florida|Florida Power & Light|Florida Power & Light (NextEra)|AEC construction permit and operating licence, 10 CFR Part 50, 1967 and 1973|p50ol
+Vermont Yankee|1|BWR|BWR-4|605|1967-12-11|1972-11-30|2014-12-29|comm|||Vernon, Vermont|Vermont Yankee Nuclear Power Corporation|NorthStar Group Services|AEC construction permit and operating licence, 10 CFR Part 50, 1967 and 1973|p50ol
+Virgil C. Summer|1|PWR|Westinghouse 3-loop|973|1973-03-21|1984-01-01||comm|||Jenkinsville, South Carolina|South Carolina Electric & Gas|Dominion Energy South Carolina, Santee Cooper|AEC construction permit 1973, NRC operating licence 1982, 10 CFR Part 50|p50ol
+Vogtle|1|PWR|Westinghouse 4-loop|1150|1976-08-01|1987-06-01||comm|||Waynesboro, Georgia|Georgia Power|Georgia Power, Oglethorpe, MEAG, Dalton Utilities|AEC construction permit 1974, NRC operating licence 1987, 10 CFR Part 50|p50ol
+Vogtle|2|PWR|Westinghouse 4-loop|1152|1976-08-01|1989-05-20||comm|||Waynesboro, Georgia|Georgia Power|Georgia Power, Oglethorpe, MEAG, Dalton Utilities|AEC construction permit 1974, NRC operating licence 1989, 10 CFR Part 50|p50ol
+Vogtle|3|PWR|AP1000|1117|2013-03-12|2023-07-31||comm||First new U.S. reactor design built in 30+ years|Waynesboro, Georgia|Georgia Power|Georgia Power, Oglethorpe, MEAG, Dalton Utilities|NRC combined licence, 10 CFR Part 52, issued 2012|p52
+Vogtle|4|PWR|AP1000|1117|2013-11-19|2024-04-29||comm|||Waynesboro, Georgia|Georgia Power|Georgia Power, Oglethorpe, MEAG, Dalton Utilities|NRC combined licence, 10 CFR Part 52, issued 2012|p52
+Waterford|3|PWR|Combustion Engineering|1168|1974-11-14|1985-09-24||comm|||Killona, Louisiana|Louisiana Power & Light|Entergy Louisiana|AEC construction permit 1974, NRC operating licence 1985, 10 CFR Part 50|p50ol
+Watts Bar|1|PWR|Westinghouse 4-loop|1157|1973-07-20|1996-05-27||comm||23 years from groundbreaking to commercial operation|Spring City, Tennessee|Tennessee Valley Authority|Tennessee Valley Authority|AEC construction permit 1973, NRC operating licence 1996, 10 CFR Part 50|p50ol
+Watts Bar|2|PWR|Westinghouse 4-loop|1164|1973-09-01|2016-06-04||comm||43 years from groundbreaking; construction halted 1985–2007|Spring City, Tennessee|Tennessee Valley Authority|Tennessee Valley Authority|AEC construction permit 1973, NRC operating licence 2015, 10 CFR Part 50|p50ol
+Wolf Creek|1|PWR|Westinghouse 4-loop|1200|1977-05-31|1985-09-03||comm|||Burlington, Kansas|Kansas Gas and Electric|Evergy, Kansas Electric Power Co-op|NRC construction permit and operating licence, 10 CFR Part 50, 1977 and 1985|p50ol
+Yankee Rowe|1|PWR|Westinghouse|167|1957-11-01|1961-07-01|1991-10-01|comm|||Rowe, Massachusetts|Yankee Atomic Electric Company|Yankee Atomic Electric Company|AEC Power Reactor Demonstration Program unit; AEC licences 1957 and 1963|p50ol
+Zion|1|PWR|Westinghouse|1040|1968-12-01|1973-12-31|1998-02-13|comm|||Zion, Illinois|Commonwealth Edison|Constellation Energy (decommissioned)|AEC construction permit and operating licence, 10 CFR Part 50, 1968 and 1973|p50ol
+Zion|2|PWR|Westinghouse|1040|1968-12-01|1974-09-17|1998-02-13|comm|||Zion, Illinois|Commonwealth Edison|Constellation Energy (decommissioned)|AEC construction permit and operating licence, 10 CFR Part 50, 1968 and 1973|p50ol
+Experimental Breeder Reactor I|EBR-I|FBR|Argonne|0.2|1949-01-01|1951-12-20|1964-12-30|noncomm|1|First reactor in the world to generate electricity|Arco, Idaho|U.S. Atomic Energy Commission / Argonne National Laboratory|U.S. Dept. of Energy (Idaho National Laboratory)|AEC-owned national laboratory reactor, not licensed under Part 50|doe
+Shippingport|1|PWR|Westinghouse|60|1954-09-06|1958-05-26|1989-12-01|noncomm||AEC-owned demonstration plant; first full-scale U.S. power reactor|Shippingport, Pennsylvania|U.S. Atomic Energy Commission; operated by Duquesne Light|U.S. Dept. of Energy; site owned by Vistra|AEC-owned demonstration plant, no Part 50 licence issued|doe
+Sodium Reactor Experiment|SRE|SGR|Atomics International|6.5|1954-01-01|1957-07-12|1964-02-15|noncomm|1|First U.S. reactor to power a civilian community; damaged 1959|Simi Valley, California|Atomics International (North American Aviation)|Boeing; DOE remediation|AEC-owned experimental reactor operated under contract, not licensed|doe
+Vallecitos|VBWR|BWR|BWR-1|25|1956-01-01|1957-10-19|1963-12-09|noncomm||GE-owned test reactor; first privately funded reactor to supply a grid|Sunol, California|General Electric|NorthStar Vallecitos|AEC licence for privately owned test reactor, 1957|p50ol
+Enrico Fermi|1|FBR|Prototype|61|1956-08-08|1966-08-07|1972-11-29|noncomm||Fuel damage incident 1966; basis of 'We Almost Lost Detroit'|Newport, Michigan|Power Reactor Development Company (Detroit Edison)|DTE Energy|AEC Power Reactor Demonstration Program cost-shared unit, licensed 1963|p50ol
+Experimental Breeder Reactor II|EBR-II|SFR|Argonne|20|1958-01-01|1964-08-01|1994-09-30|noncomm|1|30 years of sodium fast reactor operating experience|Scoville, Idaho|U.S. Atomic Energy Commission / Argonne National Laboratory|U.S. Dept. of Energy (entombed)|AEC-owned national laboratory reactor, not licensed under Part 50|doe
+Hanford N Reactor|N|Other|Graphite-moderated, water-cooled|860|1958-01-01|1966-04-01|1987-01-01|noncomm|1|Dual-purpose plutonium production and electricity (Hanford Generating Project)|Richland, Washington|U.S. Atomic Energy Commission; WPPSS generating plant|U.S. Dept. of Energy|Federally owned production reactor, not NRC licensed|doe
+Elk River|1|BWR|Allis-Chalmers|22|1959-01-01|1964-07-01|1968-02-01|noncomm|1|AEC Power Demonstration Reactor Program|Elk River, Minnesota|U.S. AEC with Rural Cooperative Power Association|Great River Energy (fully dismantled 1974)|AEC Power Reactor Demonstration Program cost-shared unit, licensed 1962|p50ol
+Hallam|1|SGR|Atomics International|75|1959-01-01|1963-11-01|1964-09-01|noncomm|1|AEC demonstration; sodium-graphite design abandoned|Hallam, Nebraska|U.S. AEC with Consumers Public Power District|Nebraska Public Power District; DOE|AEC Power Reactor Demonstration Program cost-shared unit, licensed 1962|p50ol
+Pathfinder|1|BWR|Allis-Chalmers|59|1959-01-01|1966-08-01|1967-10-01|noncomm|1|Nuclear superheat demonstration; ran roughly one year|Sioux Falls, South Dakota|Northern States Power|Xcel Energy|AEC Power Reactor Demonstration Program cost-shared unit, licensed 1964|p50ol
+Piqua|1|OCR|Atomics International|12|1960-01-01|1963-11-01|1966-01-01|noncomm|1|Only U.S. organic-cooled power reactor|Piqua, Ohio|U.S. AEC with the City of Piqua|U.S. DOE Office of Legacy Management|AEC Power Reactor Demonstration Program cost-shared unit, licensed 1962|p50ol
+Parr (Carolinas–Virginia Tube Reactor)|CVTR|PHWR|Westinghouse|17|1960-01-01|1963-12-18|1967-01-10|noncomm|1|Only U.S. pressure-tube heavy water power reactor|Parr, South Carolina|Carolinas-Virginia Nuclear Power Associates|Dominion Energy South Carolina?|AEC Power Reactor Demonstration Program cost-shared unit, licensed 1962|p50ol
+Saxton|1|PWR|Westinghouse|3|1960-01-01|1961-11-01|1972-05-01|noncomm|1|Experimental reactor for plutonium fuel testing|Saxton, Pennsylvania|Saxton Nuclear Experimental Corporation|FirstEnergy|AEC Part 50 research and development licence DPR-4, 1962|p50ol
+BONUS|1|BWR|Nuclear superheat|17|1960-01-01|1965-09-01|1968-06-01|noncomm|1|Puerto Rico; boiling nuclear superheater experiment|Rincon, Puerto Rico|U.S. AEC with Puerto Rico Water Resources Authority|U.S. DOE Office of Legacy Management|AEC-owned superheat demonstration reactor, AEC operating licence 1964|p50ol
+Peach Bottom|1|HTGR|General Atomics prototype|40|1962-02-01|1966-06-01|1974-11-01|noncomm||First U.S. high-temperature gas-cooled reactor|Delta, Pennsylvania|Philadelphia Electric|Constellation Energy (SAFSTOR)|AEC Power Reactor Demonstration Program cost-shared unit, licensed 1966|p50ol
+La Crosse|1|BWR|Allis-Chalmers|48|1963-03-01|1969-11-07|1987-04-30|noncomm||AEC-owned demonstration, later transferred to Dairyland Power|Genoa, Wisconsin|U.S. AEC with Dairyland Power Cooperative|Dairyland Power Cooperative|AEC Power Reactor Demonstration Program unit, AEC licence 1967|p50ol
+Shoreham|1|BWR|GE|820|1972-11-01|1986-08-01|1989-05-01|noncomm||Completed and licensed at full power, then sold for $1 and decommissioned without ever operating commercially|East Shoreham, New York|Long Island Lighting Company|Long Island Power Authority|AEC construction permit 1973, NRC full-power operating licence 1989|p50ol
+North Anna|3|PWR|Westinghouse|907|1971-06-01|1982-11-01||unfinished|||Mineral, Virginia|Virginia Electric and Power|Dominion Energy Virginia|AEC construction permit, licence surrendered before operation|p50cp
+North Anna|4|PWR|Westinghouse|907|1971-12-01|1980-11-01||unfinished|||Mineral, Virginia|Virginia Electric and Power|Dominion Energy Virginia|AEC construction permit, licence surrendered before operation|p50cp
+Zimmer|1|BWR|GE|810|1972-10-01|1984-01-01||unfinished||97% complete when abandoned; converted to a coal plant|Moscow, Ohio|Cincinnati Gas & Electric|Vistra (converted to coal, retired 2022)|AEC construction permit 1972, licence surrendered before operation|p50cp
+Forked River|1|PWR|Combustion Engineering|1070|1973-08-01|1980-11-01||unfinished|||Forked River, New Jersey|Jersey Central Power & Light|Jersey Central Power & Light (FirstEnergy)?|AEC construction permit 1973, licence surrendered before operation|p50cp
+Midland|1|PWR|B&W|491|1973-03-01|1986-07-01||unfinished||85% complete; converted to a gas-fired plant|Midland, Michigan|Consumers Power|Midland Cogeneration Venture|AEC construction permit 1972, licence surrendered before operation|p50cp
+Midland|2|PWR|B&W|816|1973-03-01|1986-07-01||unfinished||Converted to a gas-fired plant|Midland, Michigan|Consumers Power|Midland Cogeneration Venture|AEC construction permit 1972, licence surrendered before operation|p50cp
+Bailly|1|BWR|GE|660|1974-01-01|1981-08-01||unfinished|1||Burns Harbor, Indiana|Northern Indiana Public Service Company|NIPSCO (NiSource)|AEC construction permit 1974, licence surrendered before operation|p50cp
+Bellefonte|1|PWR|B&W Model 205|1235|1974-09-01|1988-01-01||unfinished||~90% complete; construction suspended, never resumed|Hollywood, Alabama|Tennessee Valley Authority|Tennessee Valley Authority|AEC construction permit 1974, licence surrendered before operation|p50cp
+Bellefonte|2|PWR|B&W Model 205|1235|1974-09-01|1988-01-01||unfinished||~58% complete; construction suspended|Hollywood, Alabama|Tennessee Valley Authority|Tennessee Valley Authority|AEC construction permit 1974, licence surrendered before operation|p50cp
+Grand Gulf|2|BWR|BWR-6|1250|1974-05-01|1990-12-01||unfinished|||Port Gibson, Mississippi|Mississippi Power & Light|Entergy (System Energy Resources)|AEC construction permit 1974, cancelled before completion|p50cp
+Perry|2|BWR|GE|1205|1974-10-01|1984-04-01||unfinished|||North Perry, Ohio|Cleveland Electric Illuminating|Vistra|NRC construction permit 1977, cancelled before completion|p50cp
+Surry|3|PWR|Westinghouse 3-loop|859|1974-01-01|1977-03-01||unfinished|1||Surry, Virginia|Virginia Electric and Power|Dominion Energy Virginia|AEC construction permit 1974, licence surrendered before operation|p50cp
+Surry|4|PWR|Westinghouse 3-loop|859|1974-01-01|1977-03-01||unfinished|1||Surry, Virginia|Virginia Electric and Power|Dominion Energy Virginia|AEC construction permit 1974, licence surrendered before operation|p50cp
+Hartsville|A1|BWR|BWR-6|1285|1975-05-23|1984-08-29||unfinished|||Hartsville, Tennessee|Tennessee Valley Authority|Tennessee Valley Authority|NRC construction permit, cancelled before completion|p50cp
+Hartsville|A2|BWR|BWR-6|1285|1975-05-23|1984-08-29||unfinished|||Hartsville, Tennessee|Tennessee Valley Authority|Tennessee Valley Authority|NRC construction permit, cancelled before completion|p50cp
+Hartsville|B1|BWR|BWR-6|1285|1975-05-23|1983-03-22||unfinished|||Hartsville, Tennessee|Tennessee Valley Authority|Tennessee Valley Authority?|NRC construction permit, cancelled before completion|p50cp
+Hartsville|B2|BWR|BWR-6|1285|1975-05-23|1983-03-22||unfinished|||Hartsville, Tennessee|Tennessee Valley Authority|Tennessee Valley Authority?|NRC construction permit, cancelled before completion|p50cp
+Callaway|2|PWR|Westinghouse|1120|1975-10-01|1981-10-01||unfinished|||Fulton, Missouri|Union Electric|Ameren Missouri|NRC construction permit 1976, cancelled before completion|p50cp
+Clinton|2|BWR|BWR-6|933|1975-10-01|1983-10-01||unfinished|||Clinton, Illinois|Illinois Power|Constellation Energy|NRC construction permit 1976, cancelled before completion|p50cp
+WNP-1 (Hanford)|1|PWR|B&W|1259|1975-08-01|1983-01-01||unfinished||WPPSS; ~65% complete when halted|Richland, Washington|Washington Public Power Supply System|Energy Northwest|NRC construction permit 1975, construction halted, permit later withdrawn|p50cp
+WNP-4 (Hanford)|4|PWR|B&W|1250|1975-08-01|1982-01-01||unfinished||WPPSS; part of the largest municipal bond default in U.S. history|Richland, Washington|Washington Public Power Supply System|Energy Northwest|NRC construction permit, cancelled before completion|p50cp
+River Bend|2|BWR|BWR-6|934|1975-08-01|1984-01-01||unfinished|||St. Francisville, Louisiana|Gulf States Utilities|Entergy Louisiana|NRC construction permit 1977, cancelled before completion|p50cp
+Cherokee|1|PWR|Combustion Engineering|1280|1976-06-01|1983-04-01||unfinished||Site later used as a film set for a Chernobyl miniseries and a Marvel film|Gaffney, South Carolina|Duke Power|Duke Energy Carolinas|NRC construction permit, cancelled before completion|p50cp
+Cherokee|2|PWR|Combustion Engineering|1280|1976-06-01|1982-11-01||unfinished|||Gaffney, South Carolina|Duke Power|Duke Energy Carolinas|NRC construction permit, cancelled before completion|p50cp
+Cherokee|3|PWR|Combustion Engineering|1280|1976-06-01|1982-11-01||unfinished|||Gaffney, South Carolina|Duke Power|Duke Energy Carolinas|NRC construction permit, cancelled before completion|p50cp
+Hope Creek|2|BWR|GE|1067|1976-03-01|1981-12-01||unfinished|||Hancocks Bridge, New Jersey|Public Service Electric and Gas|PSEG Nuclear|AEC construction permit 1974, licence surrendered before operation|p50cp
+Seabrook|2|PWR|Westinghouse 4-loop|1149|1976-07-01|1988-01-01||unfinished|||Seabrook, New Hampshire|Public Service Company of New Hampshire|NextEra Energy|NRC construction permit 1976, cancelled before completion|p50cp
+Marble Hill|1|PWR|Westinghouse|1130|1977-08-01|1984-01-10||unfinished||Abandoned after $2.5B spent and ~50% completion|Hanover, Indiana|Public Service Company of Indiana|Unknown|NRC construction permit 1978, cancelled before completion|p50cp
+Marble Hill|2|PWR|Westinghouse 4-loop|1130|1977-07-01|1984-01-01||unfinished|||Hanover, Indiana|Public Service Company of Indiana|Unknown|NRC construction permit 1978, cancelled before completion|p50cp
+Phipps Bend|1|BWR|BWR-6|1233|1977-11-10|1981-08-06||unfinished||Site became an industrial park|Surgoinsville, Tennessee|Tennessee Valley Authority|Phipps Bend Joint Venture (industrial park)|NRC construction permit 1978, cancelled before completion|p50cp
+Phipps Bend|2|BWR|BWR-6|1233|1977-11-10|1981-08-06||unfinished|||Surgoinsville, Tennessee|Tennessee Valley Authority|Phipps Bend Joint Venture (industrial park)|NRC construction permit 1978, cancelled before completion|p50cp
+WNP-3 (Satsop)|3|PWR|Combustion Engineering|1240|1977-04-01|1983-01-01||unfinished||WPPSS; ~76% complete|Elma, Washington|Washington Public Power Supply System|Port of Grays Harbor (Satsop Business Park)|NRC construction permit 1978, cancelled before completion|p50cp
+WNP-5 (Satsop)|5|PWR|Combustion Engineering|1240|1977-04-01|1982-01-01||unfinished||WPPSS|Elma, Washington|Washington Public Power Supply System|Port of Grays Harbor (Satsop Business Park)|NRC construction permit, cancelled before completion|p50cp
+Shearon Harris|2|PWR|Westinghouse 3-loop|900|1978-01-01|1983-12-01||unfinished|||New Hill, North Carolina|Carolina Power & Light|Duke Energy Progress|NRC construction permit 1978, cancelled before completion|p50cp
+Shearon Harris|3|PWR|Westinghouse 3-loop|900|1978-01-01|1983-12-01||unfinished|||New Hill, North Carolina|Carolina Power & Light|Duke Energy Progress|NRC construction permit 1978, cancelled before completion|p50cp
+Shearon Harris|4|PWR|Westinghouse 3-loop|900|1978-01-01|1983-12-01||unfinished|||New Hill, North Carolina|Carolina Power & Light|Duke Energy Progress|NRC construction permit 1978, cancelled before completion|p50cp
+Yellow Creek|1|PWR|Combustion Engineering|1285|1978-02-01|1984-08-30||unfinished|||Iuka, Mississippi|Tennessee Valley Authority|Tishomingo County, Mississippi (leased to Flibe Energy)|NRC construction permit, cancelled before completion|p50cp
+Yellow Creek|2|PWR|Combustion Engineering|1285|1978-02-01|1984-08-30||unfinished|||Iuka, Mississippi|Tennessee Valley Authority|Tishomingo County, Mississippi (leased to Flibe Energy)|NRC construction permit, cancelled before completion|p50cp
+Black Fox|1|BWR|GE|1150|1978-07-01|1982-02-01||unfinished|||Inola, Oklahoma|Public Service Company of Oklahoma|Public Service Company of Oklahoma (AEP)|Construction permit applied for, never issued; application withdrawn 1982|none
+Black Fox|2|BWR|GE|1150|1978-07-01|1982-02-01||unfinished|||Inola, Oklahoma|Public Service Company of Oklahoma|Public Service Company of Oklahoma (AEP)|Construction permit applied for, never issued; application withdrawn 1982|none
+Bodega Bay|1|BWR|GE|313|1958-01-01|1964-01-01||unfinished|1|Excavation halted over earthquake fault concerns; a founding fight of the U.S. environmental movement|Bodega Bay, California|Pacific Gas and Electric|California State Parks (Sonoma Coast State Park)|Application withdrawn before permit, 1964|none
+Clinch River Breeder Reactor|1|FBR|Liquid-metal fast breeder|350|1982-01-01|1983-10-26||unfinished|1|Site preparation only; Congress cancelled funding in October 1983|Oak Ridge, Tennessee|U.S. Dept. of Energy with Tennessee Valley Authority|Tennessee Valley Authority|NRC limited work authorization only, construction permit never issued|none
+Virgil C. Summer|2|PWR|AP1000|1117|2013-03-09|2017-07-31||unfinished||Abandoned after ~$9B spent; restart of the project has been proposed|Jenkinsville, South Carolina|South Carolina Electric & Gas with Santee Cooper|Santee Cooper|NRC combined licence, 10 CFR Part 52, 2012, project abandoned|p52
+Virgil C. Summer|3|PWR|AP1000|1117|2013-11-02|2017-07-31||unfinished||Abandoned mid-construction; restart has been proposed|Jenkinsville, South Carolina|South Carolina Electric & Gas with Santee Cooper|Santee Cooper|NRC combined licence, 10 CFR Part 52, 2012, project abandoned|p52
+Kemmerer|1|SFR|TerraPower Natrium|345|2026-04-23|2030-12-31||building|1|Nuclear construction began April 2026 after the NRC construction permit; 2024 site works were non-safety.|Kemmerer, Wyoming|TerraPower with PacifiCorp|TerraPower|NRC construction permit, 10 CFR Part 50, 2026|p50cp
+Hermes|1|MSR|Kairos fluoride salt-cooled|0|2024-07-17|2027-06-30||building|1|35 MW thermal demonstration reactor, no electricity generation. Completion projected.|Oak Ridge, Tennessee|Kairos Power|Kairos Power|NRC Part 50 non-power reactor construction permit, 2023|p50cp
+Hermes|2|MSR|Kairos fluoride salt-cooled|50|2026-04-17|2028-12-31||building|1|First U.S. molten-salt-cooled reactor intended to generate electricity. Dates approximate/projected.|Oak Ridge, Tennessee|Kairos Power|Kairos Power|NRC Part 50 non-power reactor construction permits, 2024|p50cp
+Aurora-INL|1|SFR|Oklo Aurora Powerhouse|75|2025-09-01|2028-06-30||building|1|Groundbreaking September 2025 at Idaho National Laboratory. Completion projected.|Idaho Falls, Idaho|Oklo|Oklo (DOE land at Idaho National Laboratory)|DOE 10 CFR 830 authorization, Reactor Pilot Program, not NRC licensed|doe
+Aalo-X|1|SFR|Aalo Atomics|0|2025-08-01|2026-07-04||building||Test reactor precursor to the 50 MWe Aalo-1; no grid generation. Dates approximate.|Idaho Falls, Idaho|Aalo Atomics|Aalo Atomics (DOE land at Idaho National Laboratory)|DOE 10 CFR 830 authorization, Reactor Pilot Program, not NRC licensed|doe
+ACU Molten Salt Research Reactor|MSRR|MSR|Natura Resources|0|2024-09-01|2027-12-31||building|1|1 MW thermal research reactor; first molten-salt-fueled reactor licensed by the NRC.|Abilene, Texas|Abilene Christian University with Natura Resources|Abilene Christian University|NRC Part 50 non-power reactor construction permit, 2024|p50cp
+Fort Belvoir SM-1|SM-1|PWR|ALCO Products|2|1955-10-05|1957-04-08|1973-03-16|noncomm||First US reactor to deliver power to a commercial grid|Fort Belvoir, Virginia|ALCO Products for the U.S. Army Corps of Engineers|U.S. Army (decommissioned)|US Army reactor, not NRC licensed, AEC authorized construction 1955|mil
+Fort Greely SM-1A|SM-1A|PWR|ALCO Products|2|1960-01-01|1962-03-13|1972-01-01|noncomm|1|Supplied heat and power to a remote Alaskan army post|Fort Greely, Alaska|ALCO Products for the U.S. Army Corps of Engineers|U.S. Army (decommissioning underway)|US Army reactor, not NRC licensed, AEC authorized about 1960|mil
+Sundance PM-1|PM-1|PWR|The Martin Company|1|1961-01-01|1962-02-25|1968-04-01|noncomm|1|Powered an Air Force radar station in the Black Hills|Sundance Air Force Station, Wyoming|The Martin Company for the U.S. Air Force|U.S. Air Force (dismantled)|US Air Force reactor, not NRC licensed, AEC authorized about 1961|mil
+Camp Century PM-2A|PM-2A|PWR|ALCO Products|2|1960-06-01|1960-10-03|1964-01-01|noncomm|1|Assembled in tunnels beneath the Greenland ice cap|Camp Century, Greenland|ALCO Products for the U.S. Army|U.S. Army (removed 1964)|US Army reactor, not NRC licensed, AEC authorized about 1959|mil
+McMurdo PM-3A|PM-3A|PWR|The Martin Company|2|1961-12-01|1962-03-03|1972-09-01|noncomm|1|Antarctic plant nicknamed Nukey Poo|McMurdo Station, Antarctica|The Martin Company for the U.S. Navy|U.S. Navy (removed 1972)|US Navy reactor, not NRC licensed, AEC authorized about 1961|mil
+ML-1|ML-1|Other|Aerojet General|0|1959-01-01|1961-03-30|1965-01-01|noncomm|1|First closed cycle gas turbine nuclear plant, about 300 kW|National Reactor Testing Station, Idaho|Aerojet General for the U.S. Army|U.S. Army (dismantled)|US Army reactor, not NRC licensed, AEC authorized about 1959|mil
+Stationary Low Power Reactor 1|SL-1|BWR|Argonne National Laboratory|0|1957-01-01|1958-08-11|1961-01-03|noncomm|1|Destroyed by a prompt criticality accident that killed three men|National Reactor Testing Station, Idaho|Argonne design operated by Combustion Engineering for the U.S. Army|U.S. Atomic Energy Commission (site buried)|Federally owned AEC reactor, never licensed, US Army program|mil
+Sturgis|MH-1A|PWR|Martin Marietta|10|1963-01-01|1967-01-24|1976-01-01|noncomm|1|First floating nuclear power plant, a converted Liberty ship|Gatun Lake, Panama Canal Zone|Martin Marietta for the U.S. Army|U.S. Army (hull scrapped 2019)|US Army floating reactor, not NRC licensed, AEC authority from 1963|mil
+Molten-Salt Reactor Experiment|MSRE|MSR|Oak Ridge National Laboratory|0|1962-01-01|1965-06-01|1969-12-01|noncomm|1|Only molten salt reactor to run for a sustained period|Oak Ridge, Tennessee|Oak Ridge National Laboratory|U.S. Dept. of Energy (shut down)|Federally owned AEC laboratory reactor, never NRC licensed|doe
+Southwest Experimental Fast Oxide Reactor|SEFOR|FBR|General Electric|0|1965-01-01|1969-05-01|1972-01-01|noncomm|1|Built to measure the Doppler coefficient of plutonium oxide fuel|Strickler, Arkansas|General Electric for Southwest Atomic Energy Associates|University of Arkansas (decommissioned)|AEC research and development licence held by General Electric, 1968|p50ol
+Experimental Boiling Water Reactor|EBWR|BWR|Argonne National Laboratory|5|1956-01-01|1956-12-01|1967-01-01|noncomm|1|Proved the boiling water concept and later powered Argonne's own site|Lemont, Illinois|Argonne National Laboratory|U.S. Dept. of Energy (dismantled)|Federally owned AEC reactor at Argonne, never separately licensed|doe
+BORAX-III|BORAX-III|BWR|Argonne National Laboratory|2|1955-01-01|1955-07-17|1956-01-01|noncomm|1|First reactor to light an American town, Arco Idaho|Arco, Idaho|Argonne National Laboratory|U.S. Atomic Energy Commission (dismantled)|Federally owned AEC reactor at the Idaho testing station, never licensed|doe
+Fast Flux Test Facility|FFTF|FBR|Westinghouse|0|1970-12-01|1980-02-01|1992-04-01|noncomm|1|400 MW thermal sodium test reactor with no electrical output|Hanford Site, Washington|Westinghouse Hanford for the U.S. Atomic Energy Commission|U.S. Dept. of Energy (deactivated)|Federally owned, licensed by DOE rather than the NRC|doe
+S1W Naval Prototype|S1W|PWR|Westinghouse|0|1950-01-01|1953-03-30|1989-10-17|noncomm|1|Land prototype for USS Nautilus, first practical naval power reactor|Naval Reactors Facility, Idaho|Westinghouse for the U.S. Navy|U.S. Navy and Dept. of Energy (defueled)|US Navy prototype, not NRC licensed, AEC and Naval Reactors authority|mil
+A1W Naval Prototype|A1W|PWR|Westinghouse|0|1956-04-01|1958-10-01|1994-01-26|noncomm|1|Twin reactor prototype for the carrier USS Enterprise|Naval Reactors Facility, Idaho|Westinghouse for the U.S. Navy|U.S. Navy and Dept. of Energy (demolished)|US Navy prototype, not NRC licensed, Naval Reactors authority from 1956|mil
+S5G Naval Prototype|S5G|PWR|General Electric|0|1961-05-01|1965-09-01|1995-05-01|noncomm|1|Natural circulation prototype for the quiet submarine USS Narwhal|Naval Reactors Facility, Idaho|General Electric for the U.S. Navy|U.S. Navy and Dept. of Energy (defueled)|US Navy prototype, not NRC licensed, Naval Reactors authority from 1961|mil
+Ward 250|1|HTGR|Valar Atomics Ward|0|2025-09-01|2026-06-18||building|1|Sub-megawatt thermal test reactor with no electrical output.|Orangeville, Utah|Valar Atomics with San Rafael Energy Research Center|Valar Atomics|DOE authorization, Utah state site, 2026|doe
+Mark-0|1|Other|Antares Mark-0|0|2025-10-01|2026-06-04||building|1|Test reactor with no electrical output.|Idaho Falls, Idaho|Antares Industries|Antares Industries (DOE land at Idaho National Laboratory)|DOE 10 CFR 830 authorization, Idaho National Laboratory, 2026|doe
+Unity|1|Other|Deployable Energy Unity|1|2026-02-01|2026-07-01||building|1|Roughly 150 days from project kickoff to criticality.|Idaho Falls, Idaho|Deployable Energy|Deployable Energy (DOE land at Idaho National Laboratory)|DOE 10 CFR 830 authorization, Idaho National Laboratory, 2026|doe
+Groves Isotope Test Reactor|1|Other|Oklo Isotopes VIPR|0|2025-12-19|2026-08-05||building|1|15 MW thermal isotope production reactor, no electricity generation.|Lockhart, Texas|Oklo Isotopes formerly Atomic Alchemy|Oklo|DOE reactor pilot authorization, Texas, 2026|doe
+Kaleidos|1|HTGR|Radiant Kaleidos|1|2026-04-01|2026-12-31||building|1|Fuel delivered July 2026 but not yet critical as of August 2026. Completion projected.|Idaho Falls, Idaho|Radiant Industries|Radiant Industries (DOE land at Idaho National Laboratory)|DOE 10 CFR 830 authorization, Idaho National Laboratory, 2026|doe
+Last Energy PWR-5|1|PWR|Last Energy PWR-5|5|2026-03-01|2027-06-30||building|1|20 MW thermal microreactor at Texas A&M RELLIS campus.|Bryan, Texas|Last Energy|Last Energy|DOE reactor pilot program authorization, 2026|doe
+Project Pele|1|HTGR|BWXT Project Pele|1|2025-08-01|2027-12-31||building|1|Reactor core assembly began August 2025; site work started 2024. Completion projected.|Idaho Falls, Idaho|BWXT Advanced Technologies for DOD Strategic Capabilities Office|U.S. Department of Defense|Department of Defense authorization with DOE oversight, 2022|mil
+Project Ascension|1|SFR|Aalo Pod|10|2026-07-01|2027-06-30||building|1|Earthworks complete and first concrete in preparation mid-2026.|Idaho Falls, Idaho|Aalo Atomics|Aalo Atomics (DOE land at Idaho National Laboratory)|DOE 10 CFR 830 authorization, Idaho National Laboratory, 2026|doe
+Clinch River|1|BWR|GE Vernova Hitachi BWRX-300|300|2026-10-01|2032-12-31||planned|1|Construction permit recommended June 2026, mandatory hearing August 2026. Dates projected.|Oak Ridge, Tennessee|Bechtel for Tennessee Valley Authority|Tennessee Valley Authority|NRC Part 50 construction permit, recommended 2026|p50cp
+Long Mott|1|HTGR|X-energy Xe-100|80|2028-01-01|2032-12-31||planned|1|Construction permit application under NRC review; final investment decision not before 2028.|Seadrift, Texas|X-energy for Long Mott Energy|Long Mott Energy a Dow subsidiary|NRC Part 50 construction permit application, pending since 2025|p50cp
+Long Mott|2|HTGR|X-energy Xe-100|80|2028-01-01|2033-06-30||planned|1|Second of four Xe-100 units on one construction permit. Dates projected.|Seadrift, Texas|X-energy for Long Mott Energy|Long Mott Energy a Dow subsidiary|NRC Part 50 construction permit application, pending since 2025|p50cp
+Long Mott|3|HTGR|X-energy Xe-100|80|2028-06-30|2033-12-31||planned|1|Third of four Xe-100 units on one construction permit. Dates projected.|Seadrift, Texas|X-energy for Long Mott Energy|Long Mott Energy a Dow subsidiary|NRC Part 50 construction permit application, pending since 2025|p50cp
+Long Mott|4|HTGR|X-energy Xe-100|80|2028-06-30|2034-06-30||planned|1|Fourth of four Xe-100 units on one construction permit. Dates projected.|Seadrift, Texas|X-energy for Long Mott Energy|Long Mott Energy a Dow subsidiary|NRC Part 50 construction permit application, pending since 2025|p50cp
+Pioneer|1|PWR|Holtec SMR-300|300|2027-06-01|2031-06-30||planned|1|Phased construction permit application docketed February 2026. Dates projected.|Covert, Michigan|Holtec International with Hyundai Engineering and Construction|SMR LLC a Holtec subsidiary|NRC phased construction permit application, docketed 2026|p50cp
+Pioneer|2|PWR|Holtec SMR-300|300|2027-12-01|2032-06-30||planned|1|Second SMR-300 at the Palisades site. Dates projected.|Covert, Michigan|Holtec International with Hyundai Engineering and Construction|SMR LLC a Holtec subsidiary|NRC phased construction permit application, docketed 2026|p50cp
+KRONOS MMR|1|HTGR|Ultra Safe Nuclear MMR|0|2027-06-01|2029-06-30||planned|1|Research and test reactor, thermal output only, no net electrical generation. Dates projected.|Urbana, Illinois|Nano Nuclear Energy with University of Illinois|University of Illinois Urbana-Champaign|NRC Part 50 construction permit application, accepted 2026|p50cp
+Project Matador Nuclear|1|PWR|Westinghouse AP1000|1117|2027-06-01|2032-12-31||planned|1|Combined license application under NRC review since September 2025. Dates projected.|Carson County, Texas|Fermi America|Fermi America|NRC Part 52 combined license application, pending since 2025|p52
+Project Matador Nuclear|2|PWR|Westinghouse AP1000|1117|2027-12-01|2033-12-31||planned|1|Second of four AP1000 units on one combined license application. Dates projected.|Carson County, Texas|Fermi America|Fermi America|NRC Part 52 combined license application, pending since 2025|p52
+Project Matador Nuclear|3|PWR|Westinghouse AP1000|1117|2028-06-01|2034-12-31||planned|1|Third of four AP1000 units on one combined license application. Dates projected.|Carson County, Texas|Fermi America|Fermi America|NRC Part 52 combined license application, pending since 2025|p52
+Project Matador Nuclear|4|PWR|Westinghouse AP1000|1117|2029-06-01|2035-12-31||planned|1|Fourth of four AP1000 units on one combined license application. Dates projected.|Carson County, Texas|Fermi America|Fermi America|NRC Part 52 combined license application, pending since 2025|p52
+Gravity|1|PWR|Deep Fission DFR-15|15|2026-09-01|2027-12-31||planned|1|Borehole reactor 1.6 km underground; only site characterization drilling done so far. Dates projected.|Parsons, Kansas|Deep Fission|Deep Fission|DOE nuclear safety design agreement signed, 2026|doe
+Project Tetra|1|MSR|Terrestrial Energy IMSR|390|2028-06-01|2032-12-31||planned|1|DOE other transaction agreement only; no construction authorization yet. Dates projected.|Bryan, Texas|Terrestrial Energy|Terrestrial Energy|DOE other transaction agreement, no authorization, 2026|doe
+`;
+var REACTORS=RAW.trim().split("\n").map(function(l){var p=l.split("|");return{name:p[0],unit:p[1],type:p[2],model:p[3]||null,mw:+p[4],start:p[5],end:p[6],closed:p[7]||null,cat:p[8],approx:!!p[9],note:p[10]||"",loc:p[11]||"",built:p[12]||"",own:p[13]||"",lic:p[14]||"",licfam:p[15]||"none"};});
+
+</script>
+<script>
+/* Short reactor histories, keyed by "name|unit". */
+var BIO={"Arkansas Nuclear One|1": "Arkansas Nuclear One sits on Lake Dardanelle on the Arkansas River near Russellville, and Unit 1 is a Babcock and Wilcox pressurized water reactor built by Arkansas Power and Light. In 2013 a crane failure during a generator stator lift killed a worker and damaged the turbine building, prompting heightened federal oversight of the site. Entergy Arkansas operates the unit under a renewed license.", "Arkansas Nuclear One|2": "The second unit at the Russellville site is a Combustion Engineering pressurized water reactor, added by Arkansas Power and Light to share cooling and support facilities with Unit 1. It is the larger of the two reactors and has been uprated over its operating life. Entergy Arkansas runs both units, which together make up the only nuclear station in Arkansas.", "Beaver Valley|1": "Beaver Valley stands on the Ohio River at Shippingport, Pennsylvania, next to the site of the Shippingport Atomic Power Station, the first full-scale commercial reactor in the United States. Unit 1 is a Westinghouse three-loop pressurized water reactor built by Duquesne Light and cooled by natural draft towers. FirstEnergy proposed closing the plant in 2018, but it was retained and is now operated by Vistra.", "Beaver Valley|2": "Unit 2 at Beaver Valley shares the Shippingport site with Unit 1 and uses the same Westinghouse three-loop design. Its construction stretched across more than a decade as demand forecasts fell and costs rose, and it did not enter commercial service until 1987. It holds a renewed operating license and is operated by Vistra.", "Big Rock Point|1": "Big Rock Point sat on the Lake Michigan shore near Charlevoix and was the first nuclear plant in Michigan, a small General Electric boiling water reactor built for Consumers Power. For decades it served as a test bed for experimental fuel, including mixed-oxide assemblies. Consumers closed it in 1997 on economic grounds, and the site has since been dismantled to open land apart from a dry cask storage pad.", "Braidwood|1": "Braidwood lies near Braceville, Illinois, and uses a large cooling pond rather than towers. Unit 1 is a Westinghouse four-loop pressurized water reactor built by Commonwealth Edison and now operated by Constellation Energy. Tritium leaks from buried discharge piping were discovered in the mid-2000s and led to a settlement with the state and to extensive groundwater monitoring.", "Braidwood|2": "The second Braidwood unit is a near twin of Unit 1 and entered service a few months later, giving the station two Westinghouse four-loop reactors sharing one cooling pond. Both units have received power uprates and renewed operating licenses that allow operation into the 2040s. Constellation Energy operates the plant, one of the largest generators in Illinois.", "Browns Ferry|1": "Browns Ferry, on the Tennessee River near Athens, Alabama, was the first nuclear plant built by the Tennessee Valley Authority and the largest in the world when it opened. In 1975 a candle used to check for air leaks started a cable fire that damaged control systems and led to sweeping fire protection rules. Unit 1 shut down in 1985 and returned to service in 2007 after a major refurbishment.", "Browns Ferry|2": "Unit 2 is one of three General Electric boiling water reactors with Mark I containments at the Browns Ferry site. It was idled along with the rest of the plant in 1985 over safety and management concerns and was the first unit brought back, resuming operation in 1991. It has since been uprated and holds a renewed operating license.", "Browns Ferry|3": "The third Browns Ferry unit completed the station in the 1970s and, like its sisters, was shut down in 1985 during a plant-wide safety overhaul before restarting in the 1990s. All three units later received extended power uprates that made Browns Ferry one of the highest-output nuclear stations in the country. The Tennessee Valley Authority continues to operate it.", "Brunswick|1": "Brunswick sits near Southport, North Carolina, drawing cooling water through a long canal connected to the Cape Fear estuary. Unit 1 is a General Electric boiling water reactor built by Carolina Power and Light and now run by Duke Energy Progress. Its coastal location has required repeated storm preparations, including a precautionary shutdown and loss of road access during Hurricane Florence in 2018.", "Brunswick|2": "Unit 2 was the first reactor to enter service at the Brunswick site and shares the plant's cooling canal and Mark I containment design with Unit 1. Both units have been uprated and hold renewed operating licenses extending their service well past their original terms. Duke Energy Progress operates the station on the North Carolina coast.", "Byron|1": "Byron is located on the Rock River in northern Illinois and is recognizable for its two large natural draft cooling towers. Unit 1 is a Westinghouse four-loop pressurized water reactor built by Commonwealth Edison. Its owner announced in 2020 that the plant would close for economic reasons, but state clean energy legislation passed in 2021 provided support and it continues to operate under Constellation Energy.", "Byron|2": "The second Byron unit is identical to Unit 1 and entered commercial service about two years later. Both reactors have received power uprates and renewed operating licenses extending into the 2040s. The station was scheduled for retirement in 2021 before Illinois adopted carbon mitigation credits that kept it running, and Constellation Energy now operates it.", "Callaway|1": "Callaway, near Fulton, Missouri, is the only nuclear power plant in the state and was built by Union Electric on a rural site with a single natural draft cooling tower. It uses a Westinghouse four-loop pressurized water reactor built to the standardized SNUPPS design also used at Wolf Creek in Kansas. A planned second unit was cancelled, and Ameren Missouri operates the reactor under a renewed license.", "Calvert Cliffs|1": "Calvert Cliffs occupies a bluff on the western shore of Chesapeake Bay at Lusby, Maryland, and takes once-through cooling water from the bay. Unit 1 is a Combustion Engineering pressurized water reactor built by Baltimore Gas and Electric. In 2000 the station became the first in the United States to receive renewed operating licenses, and it is now operated by Constellation Energy.", "Calvert Cliffs|2": "The second Calvert Cliffs unit matches Unit 1 in design and began commercial operation shortly before it. Both reactors have had major components replaced and their output uprated, and both share the twenty-year license extension granted in 2000. Constellation Energy operates the plant, which supplies a large share of the electricity generated within Maryland.", "Catawba|1": "Catawba sits on Lake Wylie in York County, South Carolina, and was built by Duke Power with substantial ownership shares held by North Carolina municipal and cooperative power agencies. Unit 1 is a Westinghouse four-loop pressurized water reactor with an ice condenser containment. In 2005 it became the first commercial reactor in the country to test mixed-oxide fuel assemblies made from surplus weapons plutonium.", "Catawba|2": "The second Catawba unit duplicates Unit 1 and completed the station in the mid-1980s. Both reactors draw cooling water from Lake Wylie and hold renewed operating licenses running into the 2040s. Duke Energy Carolinas operates the plant for itself and its joint owners, and both units have received power uprates.", "Clinton|1": "Clinton, in central Illinois, is a single General Electric boiling water reactor built by Illinois Power beside a purpose-built cooling reservoir, Clinton Lake. A planned second unit was cancelled during construction. Slated for closure in 2017, the plant was kept in service by an Illinois zero emission credit program and is now operated by Constellation Energy.", "Columbia|1": "Columbia Generating Station stands on the federal Hanford Site near Richland, Washington, and is the only commercial nuclear plant in the Pacific Northwest. It was one of five reactors begun by the Washington Public Power Supply System, whose cost overruns and 1983 bond default were the largest municipal default of the era, and the only one completed. Energy Northwest operates the boiling water reactor under a renewed license.", "Comanche Peak|1": "Comanche Peak lies southwest of Fort Worth near Glen Rose, Texas, cooled by the man-made Squaw Creek Reservoir. Unit 1 is a Westinghouse four-loop pressurized water reactor built by Texas Utilities. Disputes over construction quality assurance and prolonged licensing hearings delayed startup by years, and the unit did not enter commercial service until 1990. Vistra now operates the plant.", "Comanche Peak|2": "The second Comanche Peak unit was completed in 1993 after the same protracted construction and licensing process that delayed Unit 1, making it one of the last reactors finished in the United States in the twentieth century. Both units hold renewed operating licenses. Vistra operates the station, which supplies power to the Texas grid.", "Connecticut Yankee|1": "Connecticut Yankee occupied the Haddam Neck peninsula on the Connecticut River and was owned by a consortium of New England utilities formed to build it. The Westinghouse pressurized water reactor ran for nearly three decades before its owners closed it in 1996, concluding that continued repairs and operating costs were uneconomic. The site has been dismantled and largely released, except for a dry cask spent fuel pad.", "Cooper|1": "Cooper Nuclear Station sits on the Missouri River at Brownville, Nebraska, and is the largest single generating unit owned by the Nebraska Public Power District. It is a General Electric boiling water reactor with a Mark I containment and was for some years run under a support services agreement with Entergy. Record river flooding in 2011 forced heightened alert at the site, but the plant kept operating.", "Crystal River|3": "Crystal River 3 stood beside coal-fired units on the Gulf coast of Florida and was a Babcock and Wilcox pressurized water reactor built by Florida Power Corporation. During a 2009 project to cut an opening for steam generator replacement, the concrete containment wall delaminated, and more cracking appeared during repairs. Duke Energy retired the unit in 2013 rather than rebuild the containment, and it is now being decommissioned.", "Davis–Besse|1": "Davis-Besse stands on the Lake Erie shore near Oak Harbor, Ohio, and is recognizable for its single hyperbolic cooling tower. Toledo Edison built it around a Babcock and Wilcox pressurized water reactor. In 2002 inspectors found that boric acid leakage had eaten a large cavity through the reactor vessel head, causing a two-year outage and a record federal enforcement penalty. Vistra operates the plant today.", "Diablo Canyon|1": "Diablo Canyon occupies a coastal terrace near Avila Beach in San Luis Obispo County, California, and is the last operating nuclear plant in the state. Pacific Gas and Electric built Unit 1 as a Westinghouse four-loop pressurized water reactor amid large protests and years of added seismic review after the offshore Hosgri fault was identified. State legislation in 2022 reversed a planned mid-decade closure and extended its operation.", "Diablo Canyon|2": "Unit 2 completed the Diablo Canyon station less than a year after Unit 1 and uses the same Westinghouse design with once-through Pacific Ocean cooling. A 2016 agreement with unions and environmental groups would have closed both reactors by 2025, but California later moved to keep them running and the owner pursued renewed federal licenses. Together the units form the largest single power plant in the state.", "Donald C. Cook|1": "The Donald C. Cook plant sits among dunes on the Lake Michigan shore at Bridgman, Michigan, and is the largest power plant in the state. Unit 1 is a Westinghouse four-loop pressurized water reactor with an ice condenser containment, built for Indiana and Michigan Electric. A 2008 turbine failure caused heavy damage and a long outage. Indiana Michigan Power, part of American Electric Power, operates it under a renewed license.", "Donald C. Cook|2": "Cook Unit 2 shares the Bridgman site, lake cooling and ice condenser containment design with Unit 1 and is slightly larger. Both units were shut down for roughly three years beginning in 1997 while their owner corrected extensive maintenance and testing deficiencies. Indiana Michigan Power operates the station, and both reactors hold renewed licenses permitting operation into the 2030s.", "Dresden|1": "Dresden 1, near Morris, Illinois on the Illinois River, was the first privately financed commercial nuclear plant in the United States, built by Commonwealth Edison with General Electric. The small boiling water reactor operated through the 1960s and 1970s before Commonwealth Edison retired it in 1978 rather than fund extensive upgrades. It has been defueled and remains in long-term storage beside the station's two operating units.", "Dresden|2": "Dresden 2 is a General Electric boiling water reactor with a Mark I containment, among the first large units of its type, drawing cooling water from the Illinois River. It has been uprated and holds a renewed operating license. Slated for retirement in 2021, it was kept in service after Illinois enacted clean energy support payments, and Constellation Energy operates it.", "Dresden|3": "Dresden 3 completed the modern station in 1971 and matches Unit 2 in design and output. Together the two reactors make Dresden one of the largest generating stations in Illinois. Both were slated to close in 2021 before state legislation provided financial support, and both hold renewed licenses. Constellation Energy operates the plant, with the retired Unit 1 nearby in storage.", "Duane Arnold|1": "Duane Arnold Energy Center, near Palo, Iowa on the Cedar River, was the only nuclear plant in the state and was built for Iowa Electric Light and Power. NextEra Energy closed the General Electric boiling water reactor in August 2020, weeks ahead of its planned retirement, after a powerful derecho damaged its cooling towers and other structures. The owner has since begun work toward restarting the unit later this decade.", "Edwin I. Hatch|1": "Edwin I. Hatch is located on the Altamaha River near Baxley, Georgia, and is owned by Georgia Power together with other state utilities and cooperatives. Unit 1 is a General Electric boiling water reactor with a Mark I containment, operated by Southern Nuclear. The station has received power uprates and renewed operating licenses, and its operator has evaluated running the units beyond the current license period.", "Edwin I. Hatch|2": "The second Hatch unit entered service in 1979 and is essentially identical to Unit 1, sharing the site's river water supply and mechanical draft cooling towers. Both units have been uprated and hold licenses renewed for an additional twenty years. Southern Nuclear operates the station for Georgia Power and its co-owners, which include municipal and cooperative power agencies.", "Enrico Fermi|2": "Enrico Fermi 2 sits on Lake Erie near Newport, Michigan, on a site that earlier hosted Fermi 1, an experimental sodium-cooled fast breeder reactor that suffered a partial fuel melt in 1966. Detroit Edison built Fermi 2 as a large General Electric boiling water reactor with a Mark I containment after a long and costly construction period. DTE Energy operates it today under a renewed license.", "Fort Calhoun|1": "Fort Calhoun stood on the Missouri River north of Omaha and was the smallest commercial reactor operating in the United States when it closed. Built by the Omaha Public Power District around a Combustion Engineering pressurized water reactor, it spent years under heightened federal oversight following findings about flood protection and major river flooding in 2011. The district retired it in 2016 for economic reasons and it is being decommissioned.", "Fort St. Vrain|1": "Fort St. Vrain, near Platteville, Colorado, was the only commercial high-temperature gas-cooled reactor built in the United States, using helium coolant and graphite fuel inside a prestressed concrete vessel supplied by General Atomics. Persistent water leakage into the helium circulators kept its availability and output low. Public Service Company of Colorado shut it down in 1989, removed the reactor, and rebuilt the site as a gas-fired plant.", "Ginna|1": "The R. E. Ginna plant sits on the Lake Ontario shore at Ontario, New York, and is a compact Westinghouse two-loop pressurized water reactor built by Rochester Gas and Electric. In 1982 a steam generator tube ruptured, releasing a small amount of radioactivity and drawing industry-wide attention to tube integrity. Now owned by Constellation Energy, it continues to operate under a renewed license.", "Grand Gulf|1": "Grand Gulf occupies a bluff above the Mississippi River at Port Gibson, Mississippi, and is a General Electric boiling water reactor with a Mark III containment. A second unit was begun but never finished, and part of its structure remains on the site. Successive uprates have made Grand Gulf one of the highest-capacity single reactor units in the country, and an Entergy subsidiary operates it.", "H. B. Robinson|2": "H. B. Robinson stands on Lake Robinson near Hartsville, South Carolina, sharing its site with a coal-fired unit, which is why the reactor carries the designation Unit 2. Built by Carolina Power and Light, it was among the earliest large Westinghouse pressurized water reactors to enter commercial service. It received one of the early license renewals in 2004, and Duke Energy Progress operates it today.", "Hope Creek|1": "Hope Creek is on Artificial Island in the Delaware River at Hancocks Bridge, New Jersey, beside the two Salem reactors. Public Service Electric and Gas built it as a General Electric boiling water reactor housed in a distinctive cylindrical building with the only natural draft cooling tower in New Jersey. A planned second unit was cancelled. PSEG Nuclear operates the plant under a renewed license.", "Humboldt Bay|3": "Humboldt Bay Unit 3 was a small General Electric boiling water reactor built by Pacific Gas and Electric beside fossil-fueled units on Humboldt Bay at Eureka, California. It was taken offline in 1976 for seismic modifications after nearby faults were identified and never restarted, being formally retired soon afterward. The reactor has since been dismantled and removed, with spent fuel held in dry storage on site.", "Indian Point|1": "Indian Point 1, at Buchanan, New York on the Hudson River, was the first nuclear unit built by Consolidated Edison and used an unusual thorium-bearing core with an oil-fired superheater to raise steam temperature. Con Edison shut it down in 1974 because its emergency core cooling system could not meet new federal requirements. The defueled unit remains in storage at the site alongside the two later reactors.", "Indian Point|2": "Indian Point 2 was a Westinghouse four-loop pressurized water reactor built by Consolidated Edison and later sold to Entergy. Its Hudson River cooling water intake and its proximity to New York City made it the subject of prolonged litigation and opposition to license renewal. Under a 2017 settlement with New York State and environmental groups, Entergy closed the unit in April 2020, and Holtec is decommissioning it.", "Indian Point|3": "Indian Point 3 was started by Consolidated Edison and finished under the New York Power Authority, which bought the unfinished unit and later sold it to Entergy. It was the last of the three Indian Point reactors to run, shutting down in April 2021 under the same settlement that closed Unit 2 and ending nuclear generation on the Hudson River site. Holtec is decommissioning the property.", "James A. FitzPatrick|1": "Sited on the Lake Ontario shore at Scriba, New York, immediately next to the Nine Mile Point station, FitzPatrick was built by the Power Authority of the State of New York and uses a General Electric BWR-4 with Mark I containment. Entergy bought it in 2000 and announced its closure in 2015, but New York zero-emission credits allowed a sale to Exelon in 2017. It continues to operate under Constellation ownership.", "Joseph M. Farley|1": "Farley Unit 1 sits on the Chattahoochee River near Columbia in southeast Alabama and was built and is still operated by Alabama Power, a Southern Company subsidiary. It is a Westinghouse three-loop pressurized water reactor cooled by natural-draft towers. The unit received a 20-year license renewal in 2005 and has been uprated modestly over its life, and it remains in commercial service.", "Joseph M. Farley|2": "The second Westinghouse three-loop unit at the Farley site near Columbia, Alabama, it entered commercial operation in 1981, roughly three and a half years after its twin. Alabama Power built and continues to operate both reactors, which share the riverside site and its cooling towers. Unit 2 was granted a 20-year license extension in 2005 and remains in service.", "Kewaunee|1": "A single Westinghouse two-loop pressurized water reactor on the Lake Michigan shore near Carlton, Wisconsin, Kewaunee was built by Wisconsin Public Service and sold to Dominion in 2005. Although it received a 20-year license renewal in 2011, Dominion could not find a buyer and shut it permanently in 2013, citing poor economics for a small single-unit merchant plant. EnergySolutions took ownership to complete decommissioning.", "LaSalle County|1": "LaSalle 1 lies in north-central Illinois near Marseilles, using a man-made cooling lake fed from the Illinois River. Commonwealth Edison built the station with General Electric BWR-5 reactors in Mark II containments, the type later uprated for additional output. Now operated by Constellation, the unit received a 20-year license renewal and continues to run as part of the largest reactor fleet in the United States.", "LaSalle County|2": "The second BWR-5 unit at the LaSalle cooling-lake site in Illinois, it began commercial operation in October 1984, about nine months after Unit 1. Commonwealth Edison built both reactors, and Constellation now operates them. Unit 2 has been uprated and has received a 20-year license extension, and it remains one of the larger boiling water reactors in commercial service.", "Limerick|1": "Limerick 1 stands beside the Schuylkill River in Limerick Township, Pennsylvania, marked by two large natural-draft cooling towers that draw makeup water pumped from the Delaware River. Philadelphia Electric built the station with General Electric BWR-5 reactors in Mark II containments. Widely protested during construction, the unit was granted a 20-year license renewal in 2014 and is now operated by Constellation.", "Limerick|2": "Construction of Limerick 2 was suspended in the early 1980s amid financing strain and public opposition before Philadelphia Electric completed it, and the unit entered commercial service in January 1990, nearly four years after its twin. It is a General Electric BWR-5 sharing the Limerick Township site and cooling towers. The reactor received a 20-year license extension in 2014 and continues to operate under Constellation.", "Maine Yankee|1": "Maine Yankee occupied a peninsula on Montsweag Bay at Wiscasset and was the only commercial reactor ever built in Maine, a Combustion Engineering pressurized water reactor owned by a consortium of New England utilities. Voters rejected three separate referendums to close it during the 1980s. Steam generator tube degradation and the projected cost of repairs led the owners to retire it in 1997, and the site was cleared except for stored spent fuel.", "McGuire|1": "McGuire 1 sits on Lake Norman at Huntersville, north of Charlotte, North Carolina, and was built and is operated by Duke. It is a Westinghouse four-loop pressurized water reactor using an ice condenser containment, a compact design shared with Duke Catawba station. The unit was granted a 20-year license renewal in 2003 and remains a mainstay of Duke Energy generation in the Carolinas.", "McGuire|2": "The second ice condenser unit at Duke McGuire station on Lake Norman, North Carolina, it entered commercial operation in March 1984. Like its twin it is a Westinghouse four-loop pressurized water reactor, and lake water provides once-through cooling. Unit 2 received a 20-year license extension in 2003, has been uprated, and continues in commercial service under Duke Energy.", "Millstone|1": "The first reactor at the Millstone site on Long Island Sound at Waterford, Connecticut, it was a General Electric BWR-3 built by Northeast Utilities. It was taken offline in 1995, and after regulators placed all three Millstone units under heightened oversight for fuel handling and safety-culture problems, the owners decided restart was not economic. Permanent shutdown followed in 1998, and the unit is being dismantled alongside the operating reactors.", "Millstone|2": "Millstone 2 is a Combustion Engineering pressurized water reactor on Long Island Sound at Waterford, Connecticut, built by Northeast Utilities and sold to Dominion in 2001. It draws cooling water directly from the sound, a design that has drawn scrutiny over thermal discharges and marine life. The unit received a 20-year license renewal in 2005 and remains in operation.", "Millstone|3": "The largest and newest reactor at the Millstone site in Waterford, Connecticut, Millstone 3 is a Westinghouse four-loop pressurized water reactor that entered service in 1986 after a long and costly construction. Northeast Utilities built it with several New England co-owners, and Dominion acquired the station in 2001. Now supported by a state power contract, it received a 20-year license extension and supplies a large share of Connecticut electricity.", "Monticello|1": "Monticello is a single General Electric BWR-3 with Mark I containment on the Mississippi River northwest of Minneapolis, built by Northern States Power and operated by Xcel Energy. Its license was renewed in 2006 and a later extended power uprate ran well over budget and schedule. Tritium leaks from a pipe were reported in 2022 and 2023 and prompted repairs and monitoring, and the plant continues to operate.", "Nine Mile Point|1": "The first nuclear plant in New York State, Nine Mile Point 1 was built by Niagara Mohawk Power on the Lake Ontario shore at Scriba and is an early General Electric BWR-2 with Mark I containment. It is among the oldest reactors still running in the United States and holds a 20-year license extension. Constellation now operates it, and in 2023 the site added a demonstration plant producing hydrogen from station power.", "Nine Mile Point|2": "Nine Mile Point 2 is a General Electric BWR-5 in a Mark II containment on Lake Ontario at Scriba, New York, completed in 1988 after severe cost overruns that led to state rate proceedings and a multi-utility ownership arrangement. Niagara Mohawk led construction, and Constellation now operates the unit together with its older neighbor. It received a 20-year license renewal and remains in commercial service.", "North Anna|1": "North Anna 1 sits on Lake Anna, a reservoir created for the plant in Louisa County, Virginia, and is a Westinghouse three-loop pressurized water reactor built by Virginia Electric and Power. The 2011 Virginia earthquake was centered near the site and both units shut down automatically, with inspections finding no significant damage. The unit holds a 20-year license extension and its owner Dominion has sought further operation beyond that term.", "North Anna|2": "The second Westinghouse three-loop unit on Lake Anna in Louisa County, Virginia, it entered commercial operation in December 1980. Two additional units planned for the site were cancelled during construction, and the reservoir still serves the two completed reactors. Unit 2 shut down safely in the 2011 Virginia earthquake, holds a 20-year license extension, and continues to operate for Dominion Energy.", "Oconee|1": "Oconee 1 lies on Lake Keowee near Seneca in northwestern South Carolina, part of a three-unit Duke station whose emergency power can be supplied by the adjacent Keowee hydroelectric plant. It is a Babcock and Wilcox pressurized water reactor. In 2000 Oconee became one of the first American plants to receive a 20-year license renewal, and Duke has pursued a further extension to run the units for 80 years.", "Oconee|2": "The second Babcock and Wilcox unit at Duke Oconee station on Lake Keowee, South Carolina, it entered commercial operation in September 1974. The three Oconee reactors share the lake for cooling and a unique hydro-backed emergency power arrangement. Unit 2 was included in the early license renewal granted in 2000 and in Duke later application to extend operation into the 2050s, and it remains in service.", "Oconee|3": "The third Babcock and Wilcox reactor at Duke Oconee station in Seneca, South Carolina, it began commercial operation in December 1974, completing the site build-out in about seven years. Cooling comes from Lake Keowee, and the station has been steadily uprated over its life. Unit 3 received a 20-year license renewal in 2000 and is covered by Duke effort to extend operation further, and it continues to run.", "Oyster Creek|1": "Oyster Creek in Lacey Township, New Jersey, was ordered by Jersey Central Power and Light in the mid-1960s and is often cited as the first American reactor bought on the expectation it would beat fossil fuel on cost. The General Electric BWR-2 became one of the longest-operating US reactors. Exelon won a 20-year license renewal in 2009 but agreed with New Jersey to close rather than build cooling towers, shutting it in 2018.", "Palisades|1": "Palisades stands on the Lake Michigan shore in Covert Township, Michigan, a single Combustion Engineering pressurized water reactor built by Consumers Power and later operated by Entergy. Its history includes early cooling problems and the replacement of major components. Entergy retired it in 2022 and transferred it to Holtec, which, backed by federal and state support, is working to make it the first shut US power reactor to restart.", "Palo Verde|1": "Palo Verde 1 is the first of three Combustion Engineering System 80 reactors near Wintersburg, Arizona, west of Phoenix, at what is the largest US nuclear station by annual output. Uniquely among American plants it sits far from any large water body and is cooled with treated municipal wastewater from the Phoenix area. Arizona Public Service operates the station for a group of southwestern utilities, and the unit holds a 20-year license extension.", "Palo Verde|2": "The second System 80 pressurized water reactor at the Palo Verde site in the Arizona desert, it entered commercial operation in September 1986. Like its siblings it relies on reclaimed municipal effluent routed to large cooling towers rather than a river or ocean. Arizona Public Service operates it on behalf of multiple co-owners, and the unit received a 20-year license renewal in 2011 and remains in service.", "Palo Verde|3": "The last of the three Combustion Engineering System 80 units near Wintersburg, Arizona, it began commercial operation in January 1988 and completed the largest generating station in the United States by output. It shares the site wastewater cooling system and central control and training facilities. Arizona Public Service operates the reactor for a consortium of utilities, it holds a 20-year license extension, and it continues to run.", "Peach Bottom|2": "Peach Bottom 2 sits above Conowingo Pond on the Susquehanna River at Delta, Pennsylvania, on a site that earlier hosted a small experimental gas-cooled reactor. Philadelphia Electric built the unit as a General Electric BWR-4 with Mark I containment. After a 20-year renewal in 2003, it received a subsequent renewal in 2020, among the first US reactors licensed toward 80 years of operation, and Constellation operates it today.", "Peach Bottom|3": "The twin BWR-4 at the Peach Bottom site on the lower Susquehanna River in Pennsylvania, it entered commercial operation in December 1974. Both units were shut down by regulators in 1987 over control room operator inattentiveness, a case that reshaped industry attention to operator conduct. The reactor has been uprated, holds a subsequent license renewal granted in 2020, and continues to operate under Constellation.", "Perry|1": "Perry is a single General Electric BWR-6 in a Mark III containment on the Lake Erie shore in North Perry, Ohio, built by Cleveland Electric Illuminating at heavy cost. A 1986 earthquake in Lake County struck before fuel loading and prompted seismic review, and a planned second unit was cancelled. The plant later figured in the Ohio subsidy scandal involving FirstEnergy. It now operates under Vistra with a license renewal application pending.", "Pilgrim|1": "Pilgrim was Massachusetts only operating commercial reactor, a General Electric BWR-3 with Mark I containment on Cape Cod Bay at Plymouth, built by Boston Edison and sold to Entergy in 1999. Despite a 20-year license renewal in 2012, repeated unplanned shutdowns placed it in the lowest regulatory performance category, and weak wholesale prices sealed its fate. Entergy closed it in May 2019 and transferred it to Holtec for decommissioning.", "Point Beach|1": "Point Beach 1 sits on the Lake Michigan shore at Two Rivers, Wisconsin, and is a compact Westinghouse two-loop pressurized water reactor built by Wisconsin Electric Power. It received a 20-year license renewal in 2005 and was sold with its twin to FPL Group, now NextEra Energy, in 2007. The unit has had its steam generators replaced and been uprated, and its owner has sought authorization to operate it toward 80 years.", "Point Beach|2": "The second Westinghouse two-loop unit at Point Beach near Two Rivers, Wisconsin, it entered commercial operation in October 1972. The two small reactors together have long been among the better-performing units of their vintage. Unit 2 received a 20-year license renewal in 2005, was acquired by NextEra Energy in 2007, and its owner has applied to extend operation further still.", "Prairie Island|1": "Prairie Island 1 occupies an island in the Mississippi River at Red Wing, Minnesota, immediately adjacent to the Prairie Island Indian Community, whose objections shaped the plant history. Northern States Power built the Westinghouse two-loop reactor, now run by Xcel Energy. A protracted 1990s fight over onsite dry cask storage led the Minnesota legislature to cap the number of casks, and the unit holds a 20-year license extension granted in 2011.", "Prairie Island|2": "The second small Westinghouse two-loop reactor on the Mississippi River island at Red Wing, Minnesota, it entered commercial operation in December 1974. Both units have had steam generators replaced and have been uprated, and both depend on the onsite dry cask storage that was the subject of long state legislative and tribal disputes. Unit 2 received a 20-year license renewal in 2011 and continues to operate for Xcel Energy.", "Quad Cities|1": "Quad Cities 1 sits on the Mississippi River at Cordova, Illinois, and is a General Electric BWR-4 with Mark I containment, effectively a sister plant to Commonwealth Edison Dresden station. The unit underwent a large extended power uprate in the early 2000s that pushed output well above its original rating. It holds a 20-year license extension and continues to operate under Constellation, aided by Illinois clean energy payments.", "Quad Cities|2": "The second BWR-4 at Cordova, Illinois, it entered commercial operation in March 1973, weeks after its twin, and shares the Mississippi River cooling intake and a common turbine building. Both units were substantially uprated in the early 2000s, work that also required attention to steam dryer vibration. The unit received a 20-year license renewal and remains in service under Constellation.", "Rancho Seco|1": "This single Babcock and Wilcox pressurized water reactor stood at Herald, southeast of Sacramento, and was the only large reactor built by the municipally owned Sacramento Municipal Utility District. Closely related in design to Three Mile Island Unit 2, it suffered chronic outages and a serious 1985 overcooling event. In June 1989 local voters rejected continued operation, making it the first US reactor closed by referendum. The site now hosts solar generation.", "River Bend|1": "River Bend is a single General Electric BWR-6 with Mark III containment near St. Francisville, Louisiana, above the Mississippi River. Gulf States Utilities built it at far more than the projected cost, and the resulting rate disallowances and litigation contributed to the utility merger with Entergy in 1993. Entergy Louisiana now operates the reactor, which has been uprated and had its license extended into the 2040s.", "Salem|1": "Salem 1 is a Westinghouse four-loop pressurized water reactor on Artificial Island in the Delaware River at Lower Alloways Creek, New Jersey, sharing the site with the Hope Creek boiling water reactor. In 1983 its reactor trip breakers twice failed to open on demand, a precursor event that drove national rulemaking on protection against failure to scram. Built by Public Service Electric and Gas, it holds a license renewal granted in 2011.", "Salem|2": "The second Westinghouse four-loop unit on Artificial Island in the Delaware River, New Jersey, it entered commercial operation in October 1981. Both Salem reactors were shut down for extended periods in the mid-1990s while their owner addressed equipment and management problems before regulators allowed restart. Unit 2 has had its steam generators replaced, received a 20-year license extension in 2011, and continues in service for PSEG Nuclear.", "San Onofre|1": "The first reactor on the Pacific bluff at San Onofre near San Clemente, California, this early Westinghouse pressurized water reactor was built by Southern California Edison and was notable for its spherical steel containment. It operated for about a quarter century at modest output. Facing the cost of seismic and safety backfits and further upgrades, Edison retired it in 1992, and it was dismantled well ahead of the two larger units.", "San Onofre|2": "San Onofre 2 is a Combustion Engineering pressurized water reactor built by Southern California Edison on the southern California coast, recognizable for the twin domes visible from Interstate 5. Replacement steam generators installed in the early 2010s suffered unexpectedly rapid tube wear, and after a tube leak in the sister unit and lengthy regulatory proceedings Edison retired both reactors in 2013. Dismantlement is under way with spent fuel in onsite dry storage.", "San Onofre|3": "The third and largest reactor at San Onofre, this Combustion Engineering unit entered commercial operation in 1984 alongside its twin. In January 2012 a tube in one of its new replacement steam generators leaked, exposing extensive wear from fluid-induced vibration and triggering the shutdown of the whole station. Southern California Edison retired both units in 2013 rather than pursue repair, and the site is being decommissioned with fuel in dry casks.", "Seabrook|1": "Seabrook sits beside salt marsh on the New Hampshire coast and draws cooling water through tunnels bored beneath the seabed. Public Service Company of New Hampshire faced mass civil disobedience, cost overruns that pushed it into bankruptcy in 1988, and a dispute with Massachusetts over emergency planning that delayed startup until 1990. A planned second unit was cancelled. Now owned by NextEra Energy, the Westinghouse four-loop reactor holds a license extension to 2050.", "Sequoyah|1": "Sequoyah 1 sits on Chickamauga Lake at Soddy-Daisy, north of Chattanooga, Tennessee, and is a Westinghouse four-loop pressurized water reactor with ice condenser containment built by the Tennessee Valley Authority. Both Sequoyah units were shut down for years in the late 1980s while TVA overhauled the management and engineering of its nuclear program. The unit received a 20-year license renewal in 2015 and continues to operate.", "Sequoyah|2": "The second ice condenser unit at the TVA station on Chickamauga Lake in Tennessee, it entered commercial operation in June 1982. Like Unit 1 it was idled for an extended period during TVA nuclear program restructuring before returning to service. The reactor has been uprated, received a 20-year license extension in 2015, and remains part of the Tennessee Valley Authority generating fleet.", "Shearon Harris|1": "Shearon Harris is a single Westinghouse three-loop pressurized water reactor on Harris Lake near New Hill, southwest of Raleigh, North Carolina. Carolina Power and Light planned four units and cancelled the other three during the construction slowdown of the late 1970s. Unused fuel pool capacity was later converted to store spent fuel shipped in from other company reactors, drawing intervenor challenges. The unit holds a license extension and operates as Duke Energy Progress.", "South Texas|1": "South Texas Project sits on a large inland site near Bay City, Texas, cooled by a man-made reservoir fed from the Colorado River. Houston Lighting and Power led construction of the two Westinghouse four-loop units, but schedule slippage and quality disputes led the utility to remove its original contractor and sue it, with Bechtel taking over. Unit 1 remains in service and is among the largest reactors in the United States.", "South Texas|2": "The second of two Westinghouse four-loop units at the South Texas Project near Bay City, Texas, sharing the site cooling reservoir with Unit 1. It entered commercial service in 1989 after a construction program marked by long delays, cost growth, and contractor litigation. The plant is now operated for a group of owners including municipal utilities in San Antonio and Austin, and both units continue to run.", "St. Lucie|1": "St. Lucie Unit 1 stands on Hutchinson Island, a barrier island on Florida's Atlantic coast near Jensen Beach. Built and operated by Florida Power and Light, it is a Combustion Engineering pressurized water reactor cooled by ocean water drawn through offshore intake pipes. The beach around the plant is a major sea turtle nesting area, and the station runs a long-standing turtle monitoring program. The unit remains in operation.", "St. Lucie|2": "The second Combustion Engineering unit at Hutchinson Island near Jensen Beach, Florida, completed by Florida Power and Light in 1983 on a relatively quick schedule for its era. Minority shares are held by the Florida Municipal Power Agency and the Orlando Utilities Commission. Like Unit 1 it uses once-through ocean cooling, and it continues to operate today.", "Surry|1": "Surry Unit 1 sits on a low peninsula on the James River in Surry County, Virginia, across the water from Jamestown. Built by Virginia Electric and Power, it was among the first Westinghouse three-loop pressurized water reactors and uses river water for once-through cooling. In 2021 the Surry units became among the first American reactors approved to operate for a total of 80 years. The unit remains in service under Dominion Energy Virginia.", "Surry|2": "The second Westinghouse three-loop unit at the James River site in Surry County, Virginia, entering commercial operation in 1973 about five months after Unit 1. The plant has undergone extensive steam generator replacement and power uprates over its life. It received a subsequent license renewal allowing operation to 80 years and continues to run for Dominion Energy Virginia.", "Susquehanna|1": "Susquehanna Unit 1 is near Berwick, Pennsylvania, on the Susquehanna River, and was built by Pennsylvania Power and Light. It is a General Electric BWR-5 boiling water reactor housed in a Mark II containment, with twin natural draft cooling towers that dominate the local skyline. The plant is now operated by Talen Energy, which has contracted a large share of the site's output to an adjacent data center campus. Both units remain in service.", "Susquehanna|2": "The second BWR-5 unit at the Berwick, Pennsylvania site, completed in 1984 about 19 months after Unit 1. The two reactors have received substantial power uprates, making Susquehanna one of the larger generating stations in the eastern United States. Talen Energy operates the plant with the Allegheny Electric Cooperative as a minority owner, and the unit continues to operate.", "Three Mile Island|1": "Three Mile Island Unit 1 occupies an island in the Susquehanna River near Middletown, Pennsylvania, and is a Babcock and Wilcox pressurized water reactor. It was offline for refueling when the accident at neighboring Unit 2 occurred in 1979 and stayed shut for years before returning to service in 1985. It ran until September 2019, when its owner closed it for economic reasons. Constellation Energy is now refurbishing the unit for a planned restart.", "Three Mile Island|2": "Three Mile Island Unit 2, a Babcock and Wilcox pressurized water reactor near Middletown, Pennsylvania, had been in commercial operation only three months when it suffered a partial core melt in March 1979. A stuck-open pressurizer relief valve drained coolant while operators, misreading their instruments, cut cooling flow. The most serious accident at an American commercial reactor, it reshaped US nuclear regulation. Fuel removal finished in the early 1990s and the plant is being dismantled.", "Trojan|1": "Trojan was a single large Westinghouse pressurized water reactor on the Columbia River near Rainier, Oregon, built and operated by Portland General Electric. It faced repeated statewide ballot measures seeking its closure and was shut permanently in 1992 after cracking was found in its steam generator tubes. Its reactor vessel was shipped intact by barge to Hanford for burial, and its landmark cooling tower was demolished with explosives in 2006.", "Turkey Point|3": "Turkey Point Unit 3 stands on Biscayne Bay south of Miami near Homestead, Florida, a Westinghouse three-loop pressurized water reactor built by Florida Power and Light. Instead of cooling towers the site uses a vast network of unlined canals, which have become hypersaline and produced a groundwater plume that drew state enforcement action. In 2019 Turkey Point became the first US plant approved to operate for 80 years, and the unit remains in service.", "Turkey Point|4": "The second Westinghouse three-loop reactor at Florida Power and Light's Turkey Point site on Biscayne Bay near Homestead, Florida, completed in 1973. It shares the plant's large cooling canal system and stands beside two older oil and gas fired units. Both nuclear units survived a direct hit from Hurricane Andrew in 1992 without damage to safety systems, and Unit 4 continues to operate.", "Vermont Yankee|1": "Vermont Yankee was a General Electric BWR-4 boiling water reactor at Vernon, Vermont, on the Connecticut River, built by a consortium of New England utilities and later sold to Entergy. It won a federal license renewal and prevailed in litigation over state efforts to block continued operation, but closed at the end of 2014 because low regional power prices made it unprofitable. The site was sold to NorthStar for accelerated dismantling.", "Virgil C. Summer|1": "The V.C. Summer plant is at Jenkinsville, South Carolina, cooled by the Monticello Reservoir, whose filling was linked to a swarm of small induced earthquakes. South Carolina Electric and Gas built the Westinghouse three-loop reactor with Santee Cooper as co-owner. An attempt to add two AP1000 units was abandoned in 2017 after severe cost overruns and led to fraud prosecutions of former executives. Unit 1 still operates for Dominion Energy South Carolina.", "Vogtle|1": "Vogtle Unit 1 is near Waynesboro, Georgia, on the Savannah River, and is a Westinghouse four-loop pressurized water reactor built by Georgia Power. Construction costs ran far above the original estimates, a pattern common to reactors ordered in the 1970s, and the plant entered service in 1987. It is co-owned with Oglethorpe Power, MEAG Power, and Dalton Utilities, and remains in operation.", "Vogtle|2": "The second Westinghouse four-loop unit at the Vogtle site near Waynesboro, Georgia, completed in 1989. Like Unit 1 it draws cooling water from the Savannah River and rejects heat through natural draft cooling towers. The two older units were later joined by two AP1000 reactors on the same site, and Unit 2 continues to operate for Georgia Power and its co-owners.", "Vogtle|3": "Vogtle Unit 3 is the first Westinghouse AP1000 built in the United States and the first newly designed American reactor to be completed in decades. Construction near Waynesboro, Georgia, began in 2013 and ran years past schedule, with costs for the two-unit expansion rising to roughly double the original estimate and contributing to Westinghouse's 2017 bankruptcy. The unit reached commercial operation in July 2023 and is running today.", "Vogtle|4": "Vogtle Unit 4 is the second AP1000 at the Waynesboro, Georgia site and entered commercial operation in April 2024, completing the only new nuclear construction project finished in the United States in the twenty-first century. Its addition made Vogtle the largest nuclear generating station in the country by capacity. Like Unit 3 it was delivered far behind schedule and well over budget, with costs recovered largely through Georgia ratepayers.", "Waterford|3": "Waterford 3 sits on the west bank of the Mississippi River at Killona in St. Charles Parish, Louisiana, and is a Combustion Engineering pressurized water reactor built by Louisiana Power and Light. Construction was troubled by quality assurance findings and the finished cost became the subject of lengthy rate proceedings before Louisiana regulators. The plant uses river water for cooling and remains in operation for Entergy Louisiana.", "Watts Bar|1": "Watts Bar Unit 1 is on Chickamauga Lake near Spring City, Tennessee, and was built by the Tennessee Valley Authority. Work began in 1973 but stalled through the 1980s as TVA cancelled or suspended much of its nuclear program and addressed widespread quality and management problems. The Westinghouse four-loop unit finally entered commercial service in 1996, about 23 years after groundbreaking, and was the last American reactor to start up in the twentieth century.", "Watts Bar|2": "Watts Bar Unit 2 holds the record for the longest reactor construction project in American history. The Tennessee Valley Authority began work in 1973, suspended it in 1985 with the unit partly built, and resumed in 2007 before reaching commercial operation in 2016, roughly 43 years after groundbreaking. It was the first new US reactor to enter service in the twenty-first century and also produces tritium for the federal government.", "Wolf Creek|1": "Wolf Creek is a single Westinghouse four-loop pressurized water reactor near Burlington, Kansas, cooled by a purpose-built lake that is a popular fishing and recreation site. It was built to the standardized SNUPPS design shared with the Callaway plant in Missouri, an attempt to cut cost by reusing one engineering package. Kansas Gas and Electric led the project with partner utilities, and the plant now operates for Evergy and the Kansas Electric Power Cooperative.", "Yankee Rowe|1": "Yankee Rowe was a small early Westinghouse pressurized water reactor on the Deerfield River at Rowe, Massachusetts, built by the Yankee Atomic Electric Company as one of the first commercial nuclear plants in the country. It ran for three decades as a proving ground for light water reactor operation and fuel design. Its owner shut it permanently in 1991 rather than resolve regulatory questions about embrittlement of its reactor vessel. The site has been dismantled.", "Zion|1": "Zion Unit 1 was one of two large Westinghouse pressurized water reactors built by Commonwealth Edison on the Lake Michigan shore at Zion, Illinois, just south of the Wisconsin border. An operator error involving control rod withdrawal in 1997 took the unit offline, and with repair costs and weak economics against it the owner declared both reactors permanently shut in 1998. The site has been cleared, leaving spent fuel in dry storage.", "Zion|2": "The second Westinghouse unit at Commonwealth Edison's Zion station on Lake Michigan in Zion, Illinois, entering service in 1974. It was retired along with Unit 1 in 1998, well short of its licensed life, as the utility concluded the plant could not be operated economically. Decommissioning was carried out under a contractor arrangement and the site has been demolished down to an onsite spent fuel storage pad.", "Experimental Breeder Reactor I|EBR-I": "EBR-I, at what is now Idaho National Laboratory near Arco, Idaho, was designed by Argonne National Laboratory for the Atomic Energy Commission. In December 1951 it became the first reactor anywhere to generate usable electricity, initially lighting four bulbs, and it later proved that a reactor could breed more fuel than it consumed. A 1955 test partially melted its core. Retired in 1964, it is now a National Historic Landmark open to visitors.", "Shippingport|1": "Shippingport, on the Ohio River northwest of Pittsburgh, was the first full-scale American power reactor devoted entirely to civilian electricity. Owned by the Atomic Energy Commission and operated by Duquesne Light, its pressurized water design grew out of the naval reactor program. In its final years it was refitted with a light water breeder core to test thorium fuel. It later became the first US commercial-scale reactor fully decommissioned, its pressure vessel shipped whole to Hanford.", "Sodium Reactor Experiment|SRE": "The Sodium Reactor Experiment sat at the Santa Susana Field Laboratory above Simi Valley, California, designed and run by Atomics International. Sodium cooled and graphite moderated, in 1957 it became the first US reactor to supply electricity to a civilian community. In July 1959 a coolant blockage damaged roughly a third of its fuel elements and released fission gases, an event whose scale is still debated. It ran until 1964, and the site remains under cleanup.", "Vallecitos|VBWR": "The Vallecitos Boiling Water Reactor was built and paid for by General Electric at its Vallecitos Nuclear Center in the hills near Sunol, California. Starting up in 1957, it was the first privately owned and privately financed reactor to deliver significant power to a utility grid, selling output to Pacific Gas and Electric. It served mainly as a development platform for GE's boiling water reactor line before retirement in 1963. The site is being decommissioned.", "Enrico Fermi|1": "Fermi 1 was a sodium cooled fast breeder reactor on the Lake Erie shore near Newport, Michigan, built by the Power Reactor Development Company, a group led by Detroit Edison. In October 1966 a loose metal liner plate broke free and blocked coolant flow, partially melting two fuel subassemblies, though nothing was released offsite. The incident inspired the book We Almost Lost Detroit. The reactor was repaired and briefly restarted but shut permanently in 1972.", "Experimental Breeder Reactor II|EBR-II": "EBR-II operated for three decades in the Idaho desert near Scoville, built by Argonne National Laboratory for the Atomic Energy Commission. The sodium cooled fast reactor included an onsite facility for recycling its own metal fuel, and in 1986 landmark tests showed it could shut itself down safely after losing coolant flow with no operator action. Centerpiece of the Integral Fast Reactor program, it was shut in 1994 after Congress cancelled that effort.", "Hanford N Reactor|N": "N Reactor was the last of nine plutonium production reactors built on the Columbia River at the Hanford Site near Richland, Washington. Graphite moderated and water cooled, it was the only dual-purpose American reactor, making weapons plutonium while its steam was sold to the Washington Public Power Supply System for the Hanford Generating Project. It drew scrutiny after Chernobyl for superficial design similarities and shut down in 1987. It is now sealed in place.", "Elk River|1": "Elk River was a small boiling water reactor on the Mississippi River at Elk River, Minnesota, built by Allis-Chalmers for the Atomic Energy Commission under the Power Demonstration Reactor Program and operated by the Rural Cooperative Power Association. Persistent equipment problems, including cracking in reactor piping, limited it to a few years of generation before it shut in 1968. It then became the first US power reactor completely dismantled, with the site cleared by 1974.", "Hallam|1": "The Hallam Nuclear Power Facility stood beside a coal-fired station at Hallam, Nebraska, and was an Atomic Energy Commission demonstration of the sodium graphite reactor concept, built by Atomics International with the Consumers Public Power District. It supplied steam to the adjacent plant's turbines but was disabled after only about a year by failures of the cans enclosing its graphite moderator. The sodium graphite line was abandoned, and the reactor was defueled and entombed on site.", "Pathfinder|1": "Pathfinder was built by Northern States Power on the Big Sioux River at Sioux Falls, South Dakota, as an Allis-Chalmers boiling water reactor designed to superheat steam inside the core, a concept intended to raise plant efficiency. Superheater problems limited it to roughly a year of operation before it shut in 1967. The turbine hall was converted to burn fossil fuel and the site remains a working power station, while the reactor itself was decommissioned.", "Piqua|1": "Piqua, Ohio, hosted the only organic cooled power reactor built in the United States, an Atomic Energy Commission demonstration designed by Atomics International and paired with the city's municipal utility. Instead of water it used a hydrocarbon liquid as coolant and moderator, in theory allowing high temperatures at low pressure. Deposits fouling the fuel elements ended operation after about two years. The fuel was removed and the reactor sealed in place.", "Parr (Carolinas–Virginia Tube Reactor)|CVTR": "The Carolinas Virginia Tube Reactor was built at Parr, South Carolina, on the Broad River by a consortium of four southeastern utilities, with Westinghouse as designer. It was the only pressure-tube heavy water power reactor operated in the United States, using heavy water as moderator and coolant inside individual tubes. Planned from the start as a limited demonstration, it ran about three years before shutting in 1967. The mothballed building sits near the later Summer plant.", "Saxton|1": "Saxton was a very small experimental pressurized water reactor at Saxton, Pennsylvania, built by a research corporation formed by regional utilities and designed by Westinghouse. Rather than commercial generation, its purpose was reactor physics work and irradiation testing of plutonium-bearing fuel, though it did feed some power to the local grid. It shut down in 1972, and its dismantling was completed decades later with the site returned to unrestricted use.", "BONUS|1": "BONUS, the Boiling Nuclear Superheater, was built on the northwest coast of Puerto Rico at Rincon by the Atomic Energy Commission with the Puerto Rico Water Resources Authority. It tested superheating steam inside the reactor itself to improve efficiency, a concept also tried at Pathfinder in South Dakota. Fuel and superheater problems ended its short operating life in 1968. The reactor was entombed in place and the domed building later served as a museum.", "Peach Bottom|1": "Peach Bottom Unit 1, at Delta, Pennsylvania on the Susquehanna River, was the first high-temperature gas-cooled reactor built in the United States, a General Atomics prototype using helium coolant and a graphite core. Philadelphia Electric operated it as a demonstration of a design promising higher thermal efficiency than water reactors. Early fuel failures forced a core replacement, after which it ran reliably until retirement in 1974. It sits in long-term storage beside two later units.", "La Crosse|1": "The La Crosse Boiling Water Reactor stood at Genoa, Wisconsin, on the Mississippi River next to Dairyland Power Cooperative's coal station. Built by Allis-Chalmers and initially owned by the Atomic Energy Commission as a demonstration plant, it was later transferred to Dairyland, which operated it as part of the adjacent complex. Small and costly to run, it closed in 1987. Dismantling was completed in the 2010s, leaving spent fuel in dry storage on site.", "Shoreham|1": "Shoreham, a General Electric boiling water reactor at East Shoreham on the north shore of Long Island, New York, was finished and fully licensed but never sold power commercially. Its cost ballooned over more than a decade of construction, and state and county officials refused to approve an emergency evacuation plan for the island. After brief low-power testing the plant was transferred to the Long Island Power Authority for one dollar and dismantled.", "North Anna|3": "North Anna 3 was to be the third Westinghouse pressurized water reactor at Virginia Electric and Power's site on Lake Anna near Mineral, Virginia. Work advanced for years before the utility abandoned the unit in the early 1980s as electricity demand growth slowed and construction costs climbed. Dominion later used the North Anna site to seek a license for a different new reactor design, which has not been built.", "North Anna|4": "North Anna 4 was the fourth unit planned for the Lake Anna site near Mineral, Virginia, by Virginia Electric and Power. It was cancelled around 1980 during the broad collapse of American reactor orders, when slowing demand, high interest rates, and rising construction costs made large multi-unit programs untenable. Only limited site work was done, and the two completed units continue to operate.", "Zimmer|1": "The William H. Zimmer plant at Moscow, Ohio, on the Ohio River was a General Electric boiling water reactor that Cincinnati Gas and Electric brought nearly to completion before federal regulators halted work over pervasive quality assurance and recordkeeping failures. Facing the cost of rebuilding its documentation and hardware, the owners abandoned the nuclear project in 1984 and converted the plant to burn coal. The coal station operated until 2022 and has since been demolished.", "Forked River|1": "Forked River was a Combustion Engineering pressurized water reactor planned by Jersey Central Power and Light at Forked River, New Jersey, on the same coastal site as the Oyster Creek plant. Construction ran for years before the utility cancelled it in 1980 amid escalating costs, financing strain, and the sharp decline in projected electricity demand that ended most American reactor projects of that era. The partly built structures, including its cooling tower, were later removed.", "Midland|1": "Midland Unit 1 was one of two Babcock and Wilcox reactors that Consumers Power built at Midland, Michigan, intended to supply process steam to a neighboring Dow Chemical complex as well as electricity. Serious settlement of safety-related building foundations, combined with quality assurance problems, brought years of delay and heavy cost growth, and Dow withdrew from the steam contract. The abandoned plant was converted into a large gas-fired cogeneration station that still operates.", "Midland|2": "Consumers Power began two Babcock and Wilcox reactors at Midland, Michigan, partly to supply process steam to a neighboring Dow Chemical complex. Settlement of soil beneath safety related buildings, large cost overruns and Dow withdrawal from the steam contract doomed the project, which was abandoned in the mid 1980s when largely complete. The plant was rebuilt as the gas fired Midland Cogeneration Venture.", "Bailly|1": "Northern Indiana Public Service Company proposed this General Electric boiling water reactor at its Bailly Generating Station on the Lake Michigan dunes near the Indiana Dunes. The plan drew years of legal challenge from conservation groups and neighbors, and questions arose over the length of the foundation pilings. NIPSCO cancelled the unit in 1981 with little built, citing rising costs and slower demand growth.", "Bellefonte|1": "The Tennessee Valley Authority began two large Babcock and Wilcox reactors at Hollywood, Alabama, on the Tennessee River. Work slowed through the 1980s as TVA demand forecasts collapsed, and it was suspended with unit 1 roughly ninety percent complete. TVA repeatedly studied completing or selling the site, but construction was never resumed.", "Bellefonte|2": "The second Bellefonte unit was less advanced than unit 1, reaching a little over half completion before the Tennessee Valley Authority suspended work. Much of its equipment was later removed and sold or reused elsewhere, effectively foreclosing completion. The site remains in TVA hands and has been examined for other generating uses.", "Grand Gulf|2": "Mississippi Power and Light started a second boiling water reactor alongside Grand Gulf 1 near Port Gibson, Mississippi. Construction was deferred in the late 1970s and the unit was formally abandoned by 1990, after regional load growth fell short and the cost of the first unit strained its owners. Partially built structures remain on the site next to the operating reactor.", "Perry|2": "Cleveland Electric Illuminating began a twin boiling water reactor next to Perry 1 on the Lake Erie shore in Ohio. Work was suspended in the mid 1980s and the unit was later cancelled outright as demand growth slowed and costs mounted. Its unfinished containment and turbine structures still stand beside the operating reactor.", "Surry|3": "Virginia Electric and Power planned two additional units at its Surry site on the James River in Virginia. Both were dropped in the 1970s before meaningful construction, as load growth forecasts fell and the utility came under severe financial strain. The Surry station operates with only the two units completed in the early 1970s.", "Surry|4": "The fourth Surry unit was cancelled together with unit 3 in the 1970s, having never progressed beyond planning and early site work. Virginia Electric and Power abandoned its remaining expansion plans as electricity demand grew far more slowly than the forecasts on which the orders had been based.", "Hartsville|A1": "The Tennessee Valley Authority ordered four boiling water reactors at Hartsville, Tennessee, in one of the largest single nuclear commitments ever made in the United States. Construction of the A units advanced modestly before TVA cancelled them in 1984 as its electricity demand projections collapsed. Portions of the site were later reused for other purposes.", "Hartsville|A2": "Second of the four reactors planned by the Tennessee Valley Authority at Hartsville, Tennessee, cancelled in 1984 along with unit A1. Only foundation and early structural work had been carried out. The abandonment followed a TVA decision to drop most of its nuclear construction program after its demand forecasts proved far too high.", "Hartsville|B1": "One of two Hartsville reactors sited on the separate B plant area, cancelled by the Tennessee Valley Authority in 1983 before substantial construction. TVA had ordered four reactors here in the mid 1970s and shed them as projected load growth failed to materialize and borrowing costs climbed.", "Hartsville|B2": "The last of the four Hartsville reactors, dropped with unit B1 in 1983. Little more than site preparation had been completed. Its cancellation was part of a broad Tennessee Valley Authority retreat that also ended projects at Phipps Bend and Yellow Creek.", "Callaway|2": "Union Electric began a second Westinghouse reactor beside Callaway 1 near Fulton, Missouri. It was cancelled in 1981 after Missouri voters barred utilities from charging customers for construction work in progress and load growth slowed, leaving the company unable to finance both units. Only early site work was done, and Callaway 1 entered service in 1984.", "Clinton|2": "Illinois Power started a second boiling water reactor at its Clinton, Illinois, site but cancelled it in 1983 as costs on the first unit spiraled and demand forecasts weakened. Excavation and some structural work had been completed. The property was later the subject of an early site permit application for possible new reactors.", "WNP-1 (Hanford)|1": "One of five reactors ordered by the Washington Public Power Supply System, this Babcock and Wilcox unit stood on federal land at Hanford near Richland, Washington. Construction was halted in the early 1980s with the plant roughly two thirds finished, a casualty of the consortium cost and financing crisis, and the project was formally terminated in the 1990s.", "WNP-4 (Hanford)|4": "A companion to WNP-1 at Hanford, this unit was terminated in January 1982 at an early stage of construction. Bonds issued for WNP-4 and WNP-5 went unpaid, producing what was then the largest municipal bond default in United States history. Salvageable equipment was diverted to other Supply System projects.", "River Bend|2": "Gulf States Utilities planned a second boiling water reactor at its River Bend site near St. Francisville, Louisiana. It was cancelled in the mid 1980s as the utility struggled with the cost of unit 1 and with weak demand growth across its territory. Very little construction had taken place.", "Cherokee|1": "Duke Power began three Combustion Engineering reactors on the Broad River near Gaffney, South Carolina. All were abandoned in the early 1980s when Duke cut back its construction program amid falling demand growth and rising financing costs, with unit 1 the furthest along. The unfinished containment structures were later used as a film set, notably for the 1989 movie The Abyss.", "Cherokee|2": "The second of three reactors Duke Power planned at Cherokee, cancelled in 1982 with only foundation and early site work completed. Duke dropped the units as electricity demand growth slowed sharply and the capital and regulatory cost of nuclear construction rose after the Three Mile Island accident.", "Cherokee|3": "The third Cherokee reactor was cancelled in 1982 before construction of any major structures. Equipment orders were cancelled or transferred to other plants. The South Carolina site was retained by Duke and has since been considered from time to time for other generating projects.", "Hope Creek|2": "Public Service Electric and Gas planned a second boiling water reactor on Artificial Island at Hancocks Bridge, New Jersey. It was cancelled in 1981 as the utility trimmed its construction program in the face of lower load forecasts and the escalating cost of unit 1, which entered service in 1986.", "Seabrook|2": "The second Westinghouse unit at Seabrook, New Hampshire, was ordered by Public Service Company of New Hampshire and partially built before being abandoned in the late 1980s. Cost overruns, the emergency planning disputes that delayed unit 1, and the bankruptcy of the utility ended the project. Its unfinished buildings are used for storage and training.", "Marble Hill|1": "Public Service Company of Indiana began two Westinghouse reactors on the Ohio River near Hanover, Indiana. Revelations of defective concrete work in 1979, post Three Mile Island regulatory costs and an inability to finance completion led to abandonment in January 1984 with the project about half built. The structures were later dismantled.", "Marble Hill|2": "The second Marble Hill unit was far less complete than unit 1 when Public Service Company of Indiana halted the project in 1984. The write off was among the largest of the era, pushed the utility close to insolvency, and led to a corporate reorganization and a long dispute over who would bear the cost.", "Phipps Bend|1": "The Tennessee Valley Authority began two boiling water reactors at Surgoinsville, Tennessee, on the Holston River. Work stopped in 1981 when TVA cancelled a large part of its nuclear program after demand forecasts fell far below projections. The property became the Phipps Bend Industrial Park, where partly built structures remain visible.", "Phipps Bend|2": "The second Phipps Bend reactor was cancelled with unit 1 in 1981, having reached only early construction. The land is now part of an industrial park operated for local economic development, one of several Tennessee Valley Authority nuclear sites converted to other uses after the cancellations of the early 1980s.", "WNP-3 (Satsop)|3": "A Combustion Engineering reactor built by the Washington Public Power Supply System at Elma, Washington. Construction reached roughly three quarters completion before being mothballed in the early 1980s during the consortium financial collapse, and the project was later terminated. The site is now the Satsop Business Park, where the unused cooling towers still stand.", "WNP-5 (Satsop)|5": "The twin of WNP-3 at the Satsop site, halted in 1982 at an early stage of construction. Bonds issued for WNP-4 and WNP-5 were defaulted on and the units were never revived. The land was transferred to local ownership and redeveloped as a business park under the Port of Grays Harbor.", "Shearon Harris|2": "Carolina Power and Light originally planned four reactors at New Hill, North Carolina. Units 2, 3 and 4 were dropped in the early 1980s as demand growth slowed and construction costs climbed, leaving only unit 1, completed in 1987. Fuel storage pools built for the cancelled units are used to hold spent fuel from other reactors.", "Shearon Harris|3": "One of three Shearon Harris units cancelled by Carolina Power and Light as its construction program shrank in the early 1980s. Very little work on the reactor itself had been performed. The single completed unit at the site began commercial operation in 1987.", "Shearon Harris|4": "The fourth unit planned at the New Hill site, cancelled without significant construction. Carolina Power and Light scaled its plans back from four reactors to one in response to falling load forecasts, high interest rates and the higher regulatory costs that followed the Three Mile Island accident.", "Yellow Creek|1": "The Tennessee Valley Authority began two Combustion Engineering reactors at Iuka, Mississippi, on Pickwick Lake. Both were cancelled in 1984 as part of the sweeping reduction of TVA nuclear construction, with major structures unfinished. The property passed to local ownership and has since been marketed for industrial development, including as a possible advanced reactor site.", "Yellow Creek|2": "The second Yellow Creek reactor was cancelled with unit 1 in 1984 before substantial construction. The large fabrication buildings and barge access at the northern end of the Tennessee Tombigbee Waterway were later put to industrial use by the surrounding county.", "Black Fox|1": "Public Service Company of Oklahoma proposed two General Electric boiling water reactors at Inola, east of Tulsa. Sustained local intervention in the licensing proceedings delayed the project for years, and it was cancelled in February 1982 before major construction, with the utility citing cost escalation and slower demand growth.", "Black Fox|2": "The second Black Fox unit was cancelled with unit 1 in 1982 and was never built. The abandonment ended one of the most prominent nuclear licensing fights of the era, and Public Service Company of Oklahoma turned instead to coal and gas fired generation.", "Bodega Bay|1": "Pacific Gas and Electric proposed a boiling water reactor on Bodega Head on the Sonoma County coast and excavated a large pit for the foundation in the early 1960s. Opposition organized around evidence that the site lay very close to the San Andreas fault, and the utility abandoned the plan in 1964. The water filled excavation remains within Sonoma Coast State Park.", "Clinch River Breeder Reactor|1": "A federal demonstration of the liquid metal fast breeder reactor near Oak Ridge, Tennessee, sponsored by the Department of Energy with the Tennessee Valley Authority. Costs grew far beyond early estimates and critics questioned the need for plutonium breeding, and Congress cancelled funding in October 1983 after only site preparation. TVA later obtained an early site permit for small reactors on the land.", "Virgil C. Summer|2": "South Carolina Electric and Gas and Santee Cooper began two Westinghouse AP1000 reactors at Jenkinsville, South Carolina, in 2013. The project was abandoned in July 2017 after the bankruptcy of Westinghouse, severe schedule slippage and billions of dollars in overruns, and the collapse led to criminal charges and the sale of the parent utility. Proposals to complete the units have since been raised.", "Virgil C. Summer|3": "The less advanced of the two AP1000 units at the Summer site, halted in July 2017 alongside unit 2. Modules and components remained on site for years afterward. Santee Cooper has solicited partners interested in finishing the reactors as electricity demand forecasts have risen again.", "Kemmerer|1": "TerraPower is building the first Natrium plant near Kemmerer, Wyoming, beside a retiring coal station, in partnership with PacifiCorp. The design is a sodium cooled fast reactor paired with a molten salt heat storage system that allows output to vary with demand. Non nuclear site work started in 2024, the Nuclear Regulatory Commission issued a construction permit in early 2026, and a separate operating license is required before startup.", "Hermes|1": "Hermes 1 is a small fluoride salt cooled high temperature demonstration reactor being built by Kairos Power at the East Tennessee Technology Park in Oak Ridge. It received the first Nuclear Regulatory Commission construction permit ever granted to a non light water reactor. The unit is not designed to generate electricity and serves instead to validate the design and the company construction methods.", "Hermes|2": "Hermes 2 is the Kairos Power follow on plant at the same Oak Ridge site and is licensed as the first non light water reactor in the United States permitted to produce electricity. Power would be delivered to the Tennessee Valley Authority system under an arrangement tied to data center demand. Site work began in 2026 and an operating license is still required.", "Aurora-INL|1": "Oklo is building its first Aurora Powerhouse, a small sodium cooled fast reactor, on Department of Energy land at Idaho National Laboratory, with groundbreaking in September 2025. An earlier Nuclear Regulatory Commission application for the design was denied in 2022 for lack of technical detail. This first unit is proceeding under Department of Energy authorization rather than an NRC license, with commercial licensing intended for later plants.", "Aalo-X|1": "Aalo Atomics is constructing Aalo-X, a small sodium cooled experimental reactor on Department of Energy land at Idaho National Laboratory, as a precursor to its planned commercial Aalo-1 design. The unit is being authorized by the Department of Energy rather than licensed by the Nuclear Regulatory Commission and is not intended to supply the grid. The company plans to pair later reactors directly with data centers.", "ACU Molten Salt Research Reactor|MSRR": "Abilene Christian University in Texas is building a one megawatt thermal liquid fueled molten salt research reactor with the developer Natura Resources. The Nuclear Regulatory Commission issued a construction permit in 2024, the first granted in the United States for a reactor fueled by molten salt. It is being assembled in a shielded bay at the university research center, and an operating license is still needed.", "Fort Belvoir SM-1|SM-1": "SM-1 was the first plant of the Army Nuclear Power Program and the first US reactor to send electricity into a commercial utility grid, which it did in April 1957, months before Shippingport. It was a small pressurised water reactor of about two megawatts electrical built by ALCO Products at Fort Belvoir in Virginia, where it doubled as the Army's reactor operator training school. It shut down in 1973 and its containment vessel was removed during a long decommissioning campaign completed in the 2020s.", "Fort Greely SM-1A|SM-1A": "SM-1A was the field version of the Fort Belvoir design, installed at Fort Greely in interior Alaska to supply both electricity and district heat to a remote army post. It reached criticality in March 1962 and ran for a decade before persistent maintenance costs and coolant leaks led the Army to shut it down in 1972. The reactor was placed in a long entombment and full dismantlement began only in the 2020s.", "Sundance PM-1|PM-1": "PM-1 was a portable pressurised water plant built by The Martin Company for the Air Force to power a radar station at Sundance in the Black Hills of Wyoming. It reached criticality in February 1962 and generated roughly one megawatt of electricity along with process heat until it was retired in 1968. The plant was designed to be broken into airliftable packages, a requirement that drove its unusually compact layout.", "Camp Century PM-2A|PM-2A": "PM-2A was assembled in trenches cut into the Greenland ice cap at Camp Century, a US Army research base, and reached criticality in October 1960. It supplied electricity and heat for melt water to a community of scientists and soldiers living under the ice. Shifting ice deformed the tunnels and the reactor was removed in 1964, with the base abandoned soon after.", "McMurdo PM-3A|PM-3A": "PM-3A, widely nicknamed Nukey Poo, was a portable pressurised water reactor installed on Observation Hill above McMurdo Station in Antarctica. It first reached criticality in March 1962 and supplied power and desalinated water to the station for a decade, ending a heavy reliance on shipped diesel. Repeated leaks and cracking led the Navy to shut it down in 1972, after which the reactor and a large volume of contaminated rock were shipped back to the United States.", "ML-1|ML-1": "ML-1 was a mobile low power plant developed by Aerojet General for the Army and tested at the National Reactor Testing Station in Idaho. It was the first nuclear plant anywhere to drive a closed cycle gas turbine, using nitrogen as both coolant and working fluid, and was rated at roughly 300 kilowatts electrical although it never reached that in service. Persistent technical trouble limited it to short test runs and the programme was terminated in 1965.", "Stationary Low Power Reactor 1|SL-1": "SL-1, originally the Argonne Low Power Reactor, was a small boiling water reactor designed to prove that remote military sites could be powered by a plant operated by a handful of enlisted men. It reached criticality in August 1958 in Idaho and generated about 200 kilowatts of electricity alongside space heat. On 3 January 1961 a manual withdrawal of the central control rod caused a prompt criticality and steam explosion that killed all three men on shift, the only fatal reactor accident in United States history.", "Sturgis|MH-1A": "The Sturgis was a converted Liberty ship, the former Charles H. Cugle, fitted with a ten megawatt pressurised water reactor designated MH-1A and was the world's first floating nuclear power station. The reactor first went critical in January 1967 and from 1968 to 1975 the ship was moored in Gatun Lake supplying power to the Panama Canal Zone during a period of drought and fuel shortage. It was shut down in 1976, defueled, and the hull was finally dismantled in 2019.", "Molten-Salt Reactor Experiment|MSRE": "The Molten-Salt Reactor Experiment at Oak Ridge was an 7.4 megawatt thermal reactor in which the fuel was dissolved in a circulating fluoride salt rather than held in solid elements. It reached criticality in June 1965 and ran until December 1969, demonstrating operation on uranium 235, uranium 233 and plutonium fuels and accumulating years of experience with molten salt chemistry and corrosion. It produced no electricity and remains the only molten salt reactor to have operated for a sustained period anywhere.", "Southwest Experimental Fast Oxide Reactor|SEFOR": "SEFOR was a 20 megawatt thermal sodium cooled fast reactor built in rural Washington County, Arkansas, by General Electric for a consortium of utilities called Southwest Atomic Energy Associates, with West German and Euratom participation. Its single purpose was to measure the Doppler reactivity coefficient of mixed oxide fuel, a number central to the safety case for commercial fast breeders. It ran from 1969 to 1972, produced no electricity, was later transferred to the University of Arkansas, and was finally demolished after a long delay.", "Experimental Boiling Water Reactor|EBWR": "The Experimental Boiling Water Reactor at Argonne National Laboratory in Illinois was built to show that a reactor could safely boil water directly in the core and drive a turbine without a separate steam generator. It reached criticality in December 1956 at 20 megawatts thermal and five megawatts electrical, and was later pushed to far higher power in test campaigns. From 1966 it supplied electricity to Argonne's own physical plant before being shut down in 1967 and dismantled.", "BORAX-III|BORAX-III": "BORAX-III was the third in Argonne's series of boiling water experiments in the Idaho desert, created by adding a turbine generator to the BORAX-II core in 1955. On 17 July 1955 it produced about two megawatts of electricity and lit the town of Arco, Idaho, the first time a community anywhere had been powered by nuclear energy. It was a deliberately short lived experiment and was superseded within a year by BORAX-IV.", "Fast Flux Test Facility|FFTF": "The Fast Flux Test Facility at Hanford was a 400 megawatt thermal sodium cooled fast reactor built to irradiate fuels and materials for the American breeder reactor programme. Construction began in December 1970, first criticality came in February 1980, and it operated until April 1992, by which time the breeder programme it was meant to serve had been cancelled. It deliberately had no turbine and generated no electricity, and it has been in a defueled standby and deactivation state since.", "S1W Naval Prototype|S1W": "S1W, first known as Mark I, was the land based prototype for the reactor of USS Nautilus and was built inside a submarine hull section sitting in a tank of water at what became the Naval Reactors Facility in Idaho. Construction began in 1950 and the plant reached criticality on 30 March 1953, then ran a simulated Atlantic crossing at full power to prove the design before the ship went to sea. It served as a naval operator training plant until it was shut down in October 1989.", "A1W Naval Prototype|A1W": "A1W was the land based prototype for the propulsion plant of USS Enterprise, the first nuclear powered aircraft carrier, and consisted of two Westinghouse pressurised water reactors arranged in tandem as one carrier engine room would be. Construction at the Naval Reactors Facility in Idaho began on 1 April 1956 and the plant first went critical in 1958, reaching full power on both reactors in 1959. It trained carrier operators for more than three decades before shutting down in January 1994 and being demolished.", "S5G Naval Prototype|S5G": "S5G was the prototype for USS Narwhal and was designed to circulate its coolant by natural convection at low and moderate power, removing the noise of primary pumps and making the submarine markedly quieter. Construction in Idaho began in May 1961 and the plant first operated in 1965, mounted in a hull section that could be rolled and pitched to prove the concept would work at sea. It ran as a training plant until May 1995 and its layout led directly to the S8G reactor of the Ohio class.", "Ward 250|1": "Ward 250 is a small helium-cooled test reactor built by Valar Atomics at the San Rafael Energy Research Center in Emery County, Utah, under a state-hosted arrangement rather than an NRC license. It reached first criticality on 18 June 2026, making it one of the first privately built test reactors to operate in the United States in decades. It produces heat only and has no electrical output.", "Mark-0|1": "Mark-0 is a microreactor test unit built by Antares Industries at Idaho National Laboratory under the DOE reactor pilot program. It reached first criticality on 4 June 2026, the first of the pilot cohort to do so. The unit is a demonstration article intended to prove out Antares fuel and control approaches ahead of a larger Mark-1 design.", "Unity|1": "Unity is a compact reactor built by Deployable Energy at Idaho National Laboratory under DOE authorization as part of the 2025 reactor pilot cohort. It went critical on 1 July 2026, roughly 150 days after project kickoff, which the company claims as the fastest reactor build in modern U.S. history. It is a very small unit intended to demonstrate rapid deployment rather than commercial power output.", "Groves Isotope Test Reactor|1": "The Groves reactor is a 15 MW thermal isotope production reactor built by Oklo Isotopes, formerly Atomic Alchemy, at a private site in Lockhart, Texas. It reached criticality on 5 August 2026 after a construction period of about 229 days. It is designed to irradiate targets for medical and industrial isotopes and does not generate electricity.", "Kaleidos|1": "Kaleidos is a one megawatt class helium-cooled microreactor built by Radiant Industries for testing in the DOME test bed at Idaho National Laboratory. Fuel was delivered to the site on 1 July 2026 and the reactor was still in pre-critical testing as of August 2026. Radiant intends Kaleidos as a transportable unit for remote power and defense applications.", "Last Energy PWR-5|1": "The PWR-5 is a 20 MW thermal pressurized water microreactor being built by Last Energy at the Texas A and M University System RELLIS campus in Bryan, Texas. Last Energy is one of the companies selected for the DOE reactor pilot program in 2025 and is pursuing DOE authorization rather than an NRC license for this first unit. Fabrication and site work were under way through 2026 with criticality targeted for 2027.", "Project Pele|1": "Project Pele is a transportable high temperature gas-cooled microreactor built by BWXT Advanced Technologies for the Department of Defense Strategic Capabilities Office, to be tested at Idaho National Laboratory. Site work began in 2024 and reactor core assembly started in August 2025 at BWXT facilities in Virginia. It is authorized by the Department of Defense with DOE oversight rather than by the NRC.", "Project Ascension|1": "Project Ascension is the Aalo Atomics facility at Idaho National Laboratory that will host the company first Aalo Pod, a sodium-cooled unit of roughly 10 MW electrical intended for data center power. Earthworks were complete and first concrete was in preparation during mid-2026, following the smaller Aalo-X test reactor which went critical on 4 July 2026. It is authorized under the DOE pathway created by the 2025 reactor pilot program.", "Clinch River|1": "Clinch River Unit 1 is a 300 MW BWRX-300 boiling water small modular reactor proposed by the Tennessee Valley Authority on its Clinch River site near Oak Ridge, Tennessee. NRC staff completed its safety review and recommended issuing a construction permit in June 2026, with the mandatory uncontested hearing held in August 2026. It would be the first BWRX-300 built in the United States.", "Long Mott|1": "Long Mott Unit 1 is the first of four 80 MW Xe-100 high temperature gas-cooled reactors proposed at the Dow chemical complex at Seadrift in Calhoun County, Texas. The applicant is Long Mott Energy, a Dow subsidiary, with X-energy as reactor supplier, and the plant would supply steam and power to the site. The construction permit application remains under NRC review and Dow has said a final investment decision will not come before 2028.", "Long Mott|2": "Long Mott Unit 2 is the second of four Xe-100 reactors covered by a single construction permit application for the Seadrift site in Texas. The four units share a common turbine hall and would collectively replace fossil-fired cogeneration at the Dow plant. No construction permit has been issued and no safety-related construction has started.", "Long Mott|3": "Long Mott Unit 3 is the third of four Xe-100 reactors in the Long Mott Energy construction permit application for Seadrift, Texas. Like the other units it is at the licensing stage only, with site characterization complete but no nuclear construction. Commissioning dates shown are projections derived from the applicant schedule.", "Long Mott|4": "Long Mott Unit 4 is the fourth Xe-100 reactor in the Long Mott Energy application for the Dow Seadrift site in Texas. It would be the last of the four to come online. The project remains under NRC review with no construction permit issued as of August 2026.", "Pioneer|1": "Pioneer Unit 1 is a 300 MW Holtec SMR-300 pressurized water small modular reactor proposed on the Palisades nuclear plant site at Covert, Michigan. The applicant is SMR LLC, a Holtec subsidiary, with Hyundai Engineering and Construction as constructor. A phased construction permit application was filed on 31 December 2025 and docketed by the NRC on 27 February 2026.", "Pioneer|2": "Pioneer Unit 2 is the second Holtec SMR-300 planned for the Palisades site in Michigan, following the restart of the existing Palisades pressurized water reactor in 2025. It is covered by the same phased construction permit application as Unit 1. No construction permit has been issued and no nuclear construction has begun.", "KRONOS MMR|1": "KRONOS is a high temperature gas-cooled micro modular reactor proposed by Nano Nuclear Energy for the University of Illinois Urbana-Champaign campus, using the Ultra Safe Nuclear MMR design that Nano Nuclear acquired out of bankruptcy. A construction permit application was filed on 31 March 2026 and accepted for review by the NRC in May 2026. It is licensed as a research and test reactor and would provide process heat rather than significant net electricity.", "Project Matador Nuclear|1": "Project Matador Nuclear Unit 1 is the first of four Westinghouse AP1000 reactors proposed by Fermi America on a large energy campus in Carson County, Texas, adjacent to the DOE Pantex Plant. A combined license application was submitted in June 2025 and accepted for NRC review in September 2025, using an applicant-prepared draft environmental impact statement pilot. The four units would total roughly four gigawatts and are intended primarily to serve data centers.", "Project Matador Nuclear|2": "Unit 2 is the second AP1000 in the Fermi America combined license application for the Carson County, Texas campus. Environmental scoping began in March 2026. No license has been issued and no safety-related construction has started.", "Project Matador Nuclear|3": "Unit 3 is the third AP1000 in the Fermi America application covering NRC dockets 05200051 through 05200054. Fermi America has done extensive non-nuclear site development including gas generation and transmission works, none of which is reactor construction. Dates shown are projections from company statements.", "Project Matador Nuclear|4": "Unit 4 is the fourth and last AP1000 in the Fermi America combined license application for Project Matador in Texas. It is the latest unit in the company sequence and the most schedule-uncertain. The application remains under NRC review as of August 2026.", "Gravity|1": "Gravity is the first commercial unit planned by Deep Fission, a 15 MW electrical pressurized water reactor emplaced roughly 1.6 kilometres down a borehole at a site near Parsons, Kansas. A ceremonial groundbreaking took place on 9 December 2025 and was followed by drilling a data acquisition well for site characterization, not reactor installation. Deep Fission signed a nuclear safety design agreement with DOE in 2026 but has no construction authorization.", "Project Tetra|1": "Project Tetra is a proposed Terrestrial Energy Integral Molten Salt Reactor plant at the Texas A and M University System RELLIS campus in Bryan, Texas, sized at roughly 390 MW electrical. Terrestrial Energy signed a DOE other transaction agreement in January 2026 under the reactor pilot programme. There is no construction authorization, no NRC construction permit application, and no nuclear construction."};
+
+</script>
+<script>
+(function(){
+"use strict";
+
+var TODAY = new Date("2026-08-10");
+
+var TYPE = {
+  PWR:{c:"var(--pwr)", label:"Pressurized water"},
+  BWR:{c:"var(--bwr)", label:"Boiling water"},
+  HTGR:{c:"var(--htgr)", label:"High-temp gas"},
+  GCR:{c:"var(--gcr)", label:"Gas cooled"},
+  FBR:{c:"var(--fbr)", label:"Fast breeder"},
+  SFR:{c:"var(--sfr)", label:"Sodium fast"},
+  SGR:{c:"var(--sgr)", label:"Sodium graphite"},
+  PHWR:{c:"var(--phwr)", label:"Heavy water"},
+  OCR:{c:"var(--ocr)", label:"Organic cooled"},
+  MSR:{c:"var(--msr)", label:"Molten salt"},
+  Other:{c:"var(--other)", label:"Other"}
+};
+
+var CAT = {
+  comm:      {label:"Built and ran commercially", built:"Completed and operated"},
+  noncomm:   {label:"Built, never commercial",     built:"Completed and operated"},
+  unfinished:{label:"Part built, then abandoned",  built:"Partly built, never finished"},
+  building:  {label:"Being built now",             built:"Under construction"},
+  planned:   {label:"Designed only, not built",    built:"Design and licensing only &mdash; nothing built"}
+};
+
+// Licence family, precomputed in data.js from the full licence string.
+var LICFAM = {
+  p50ol:{c:"var(--l-p50ol)", label:"Part 50 &mdash; construction permit and operating licence",
+         short:"Part 50, permit + operating licence"},
+  p50cp:{c:"var(--l-p50cp)", label:"Part 50 &mdash; construction permit only",
+         short:"Part 50, construction permit only"},
+  p52:  {c:"var(--l-p52)",   label:"Part 52 &mdash; combined licence",
+         short:"Part 52 combined licence"},
+  doe:  {c:"var(--l-doe)",   label:"Federal &mdash; Department of Energy authority",
+         short:"DOE / federal authorisation"},
+  mil:  {c:"var(--l-mil)",   label:"Military &mdash; Navy, Army or Air Force",
+         short:"Military reactor programme"},
+  none: {c:"var(--l-none)",  label:"No licence ever issued",
+         short:"No licence issued"}
+};
+
+var BIOS = (typeof BIO !== "undefined") ? BIO : {};
+
+var state = {
+  cats: {comm:true, noncomm:true, unfinished:true, building:true, planned:true},
+  types: {},
+  lics: {},
+  colorBy: "type",
+  q: "",
+  life: false,
+  x0: null, x1: null
+};
+
+var data = REACTORS.map(function(r,i){
+  return {
+    i:i, name:r.name, unit:r.unit, type:(TYPE[r.type]?r.type:"Other"),
+    model:r.model, mw:r.mw,
+    s:new Date(r.start), e:new Date(r.end),
+    cl:r.closed?new Date(r.closed):null,
+    cat:r.cat, approx:!!r.approx, note:r.note||"",
+    loc:r.loc||"", built:r.built||"", own:r.own||"", lic:r.lic||"",
+    licfam: (LICFAM[r.licfam] ? r.licfam : "none"),
+    bio: BIOS[r.name+"|"+(r.unit||"")] || ""
+  };
+});
+
+// Rough lifetime generation estimate: capacity x time online x an era-typical
+// capacity factor. The U.S. fleet averaged roughly 60% in the 1970s and 80s and
+// roughly 90% from the 2000s on, so the factor is picked from the operating era.
+// This is an order-of-magnitude figure, not metered output.
+data.forEach(function(d){
+  d.twh = null; d.yrsOn = null;
+  if(d.cat==="unfinished" || d.cat==="building" || d.cat==="planned" || !d.mw) return;
+  var stop = d.cl || TODAY;
+  var y = (stop - d.e) / 31557600000;
+  if(y <= 0) return;
+  var mid = new Date((+d.e + +stop)/2).getUTCFullYear();
+  var cf = mid < 1990 ? 0.60 : (mid < 2000 ? 0.72 : 0.88);
+  d.yrsOn = y;
+  d.twh = d.mw * 8766 * y * cf / 1e6;
+});
+
+// deterministic vertical offset for lines that would land on identical pixels
+(function(){
+  var seen = {}, counts = {};
+  data.forEach(function(d){
+    var k = d.mw+"|"+(+d.s)+"|"+(+d.e);
+    d.j = (seen[k]||0); seen[k] = d.j+1;
+    counts[k] = (counts[k]||0)+1;
+  });
+  data.forEach(function(d){
+    var k = d.mw+"|"+(+d.s)+"|"+(+d.e), n = counts[k];
+    d.jy = n>1 ? (d.j-(n-1)/2)*4.6 : 0;
+  });
+})();
+
+var typeOrder = Object.keys(TYPE).filter(function(t){
+  return data.some(function(d){return d.type===t;});
+});
+typeOrder.forEach(function(t){ state.types[t]=true; });
+
+var X0 = new Date("1947-06-01"), X1 = new Date("2036-12-31");
+var FULLSPAN = X1 - X0;
+var MINSPAN = 2.5 * 365.2425 * 864e5;
+var MWMAX = 1460;
+
+// ---------- controls ----------
+function countCat(c){ return data.filter(function(d){return d.cat===c;}).length; }
+function countType(t){ return data.filter(function(d){return d.type===t;}).length; }
+
+var catBox = document.getElementById("cats");
+Object.keys(CAT).forEach(function(c){
+  var el = document.createElement("div");
+  el.className = "chip";
+  el.dataset.cat = c;
+  el.innerHTML = catSwatch(c) + "<span>"+CAT[c].label+"</span><span class='n'>"+countCat(c)+"</span>";
+  el.onclick = function(){ state.cats[c]=!state.cats[c]; el.classList.toggle("off",!state.cats[c]); draw(); };
+  catBox.appendChild(el);
+});
+
+function catSwatch(c){
+  var k = "#514c42", p = "#f6f3ec", o = "<svg class='sw' viewBox='0 0 26 11'>";
+  var ln = "<line x1='2.2' y1='5.5' x2='%X%' y2='5.5' stroke='"+k+"' stroke-width='1.1'";
+  if(c==="comm")
+    return o + ln.replace("%X%","20.8") + "/><circle cx='2.2' cy='5.5' r='2.2' fill='"+k+"'/>"
+           + "<circle cx='20.8' cy='5.5' r='2.5' fill='"+k+"'/></svg>";
+  if(c==="noncomm")
+    return o + ln.replace("%X%","20.8") + " stroke-opacity='.8'/><circle cx='2.2' cy='5.5' r='2.2' fill='"+k+"'/>"
+           + "<circle cx='20.8' cy='5.5' r='2.5' fill='"+p+"' stroke='"+k+"' stroke-width='.9'/></svg>";
+  if(c==="unfinished")
+    return o + ln.replace("%X%","16.5") + " stroke-dasharray='3 2.2'/><circle cx='2.2' cy='5.5' r='2.2' fill='"+k+"'/>"
+           + "<path d='M18.4 3 L23.2 8 M23.2 3 L18.4 8' stroke='"+k+"' stroke-width='1.1' fill='none'/></svg>";
+  if(c==="planned")
+    return o + "<line x1='2.2' y1='5.5' x2='17.8' y2='5.5' stroke='"+k+"' stroke-width='1' stroke-opacity='.45' stroke-dasharray='.9 2.4'/>"
+           + "<circle cx='2.2' cy='5.5' r='2' fill='"+p+"' stroke='"+k+"' stroke-width='.9' stroke-opacity='.6'/>"
+           + "<rect x='18.6' y='3.3' width='4.4' height='4.4' fill='"+p+"' stroke='"+k+"' stroke-width='.9' stroke-opacity='.6'/></svg>";
+  return o + ln.replace("%X%","10") + "/>"
+         + "<line x1='10' y1='5.5' x2='18.4' y2='5.5' stroke='"+k+"' stroke-width='1.1' stroke-dasharray='1.4 2.1'/>"
+         + "<circle cx='2.2' cy='5.5' r='2.2' fill='"+k+"'/>"
+         + "<path d='M23.2 5.5 L20.8 3 L18.4 5.5 L20.8 8 Z' fill='"+p+"' stroke='"+k+"' stroke-width='.9'/></svg>";
+}
+
+// ---------- licence family chips ----------
+function countLic(f){ return data.filter(function(d){return d.licfam===f;}).length; }
+var licOrder = Object.keys(LICFAM).filter(function(f){ return countLic(f)>0; });
+licOrder.forEach(function(f){ state.lics[f]=true; });
+
+var licBox = document.getElementById("lics");
+licOrder.forEach(function(f){
+  var el = document.createElement("div");
+  el.className = "chip";
+  el.dataset.lic = f;
+  el.innerHTML = "<span class='dot' style='background:"+LICFAM[f].c+"'></span><span>"+LICFAM[f].label+"</span><span class='n'>"+countLic(f)+"</span>";
+  el.onclick = function(ev){
+    if(ev.altKey || ev.metaKey){
+      var only = licOrder.every(function(o){ return state.lics[o]===(o===f); });
+      licOrder.forEach(function(o){ state.lics[o] = only ? true : (o===f); });
+      [].forEach.call(licBox.children,function(c){ c.classList.toggle("off",!state.lics[c.dataset.lic]); });
+    } else {
+      state.lics[f]=!state.lics[f];
+      el.classList.toggle("off",!state.lics[f]);
+    }
+    draw();
+  };
+  licBox.appendChild(el);
+});
+
+// ---------- colour mode ----------
+var cbyType = document.getElementById("cby-type"), cbyLic = document.getElementById("cby-lic");
+function setColorBy(m){
+  state.colorBy = m;
+  cbyType.classList.toggle("on", m==="type");
+  cbyLic.classList.toggle("on", m==="lic");
+  draw();
+}
+cbyType.onclick = function(){ setColorBy("type"); };
+cbyLic.onclick  = function(){ setColorBy("lic"); };
+
+function colorOf(d){
+  return state.colorBy==="lic" ? LICFAM[d.licfam].c : TYPE[d.type].c;
+}
+
+var typeBox = document.getElementById("types");
+typeOrder.forEach(function(t){
+  var el = document.createElement("div");
+  el.className = "chip";
+  el.innerHTML = "<span class='dot' style='background:"+TYPE[t].c+"'></span><span>"+TYPE[t].label+"</span><span class='n'>"+countType(t)+"</span>";
+  el.title = t + " — " + TYPE[t].label + " reactor";
+  el.onclick = function(ev){
+    if(ev.altKey || ev.metaKey){
+      var only = typeOrder.every(function(o){ return state.types[o]===(o===t); });
+      typeOrder.forEach(function(o){ state.types[o] = only ? true : (o===t); });
+      syncTypeChips();
+    } else {
+      state.types[t]=!state.types[t];
+      el.classList.toggle("off",!state.types[t]);
+    }
+    draw();
+  };
+  el.dataset.type = t;
+  typeBox.appendChild(el);
+});
+function syncTypeChips(){
+  [].forEach.call(typeBox.children,function(el){
+    el.classList.toggle("off", !state.types[el.dataset.type]);
+  });
+}
+
+document.getElementById("q").addEventListener("input", function(e){
+  state.q = e.target.value.trim().toLowerCase(); draw();
+});
+var lifeBtn = document.getElementById("life");
+lifeBtn.onclick = function(){ state.life=!state.life; lifeBtn.classList.toggle("on",state.life); draw(); };
+
+// ---------- zoom / pan ----------
+function curView(){ return [+(state.x0||X0), +(state.x1||X1)]; }
+function setView(a,b){
+  if(b-a < MINSPAN){ var m=(a+b)/2; a=m-MINSPAN/2; b=m+MINSPAN/2; }
+  if(b-a >= FULLSPAN){ state.x0=null; state.x1=null; draw(); return; }
+  if(a < +X0){ b += (+X0-a); a = +X0; }
+  if(b > +X1){ a -= (b-(+X1)); b = +X1; }
+  if(a < +X0) a = +X0;
+  state.x0 = new Date(a); state.x1 = new Date(b);
+  draw();
+}
+function zoomAt(frac, factor){
+  var v = curView(), sp = v[1]-v[0], anchor = v[0] + frac*sp, ns = sp*factor;
+  setView(anchor - frac*ns, anchor + (1-frac)*ns);
+}
+function panBy(frac){
+  var v = curView(), d = (v[1]-v[0])*frac;
+  setView(v[0]+d, v[1]+d);
+}
+document.getElementById("reset").onclick = function(){ state.x0=null; state.x1=null; draw(); };
+document.getElementById("zin").onclick  = function(){ zoomAt(.5, 1/1.6); };
+document.getElementById("zout").onclick = function(){ zoomAt(.5, 1.6); };
+document.getElementById("pl").onclick   = function(){ panBy(-.28); };
+document.getElementById("pr").onclick   = function(){ panBy(.28); };
+[].forEach.call(document.querySelectorAll("button.era"), function(b){
+  b.onclick = function(){
+    setView(+new Date(b.dataset.a+"-01-01"), +new Date(b.dataset.b+"-01-01"));
+  };
+});
+document.addEventListener("keydown", function(ev){
+  if(/^(INPUT|TEXTAREA)$/.test(ev.target.tagName)) return;
+  if(ev.key==="+"||ev.key==="="){ zoomAt(.5,1/1.6); ev.preventDefault(); }
+  else if(ev.key==="-"||ev.key==="_"){ zoomAt(.5,1.6); ev.preventDefault(); }
+  else if(ev.key==="ArrowLeft"){ panBy(-.2); ev.preventDefault(); }
+  else if(ev.key==="ArrowRight"){ panBy(.2); ev.preventDefault(); }
+  else if(ev.key==="0"){ state.x0=null; state.x1=null; draw(); }
+});
+
+// ---------- chart ----------
+var svg = document.getElementById("chart");
+var tip = document.getElementById("tip");
+var zread = document.getElementById("zread");
+var M = {t:18, r:22, b:46, l:64};
+var LW = 0.9, R0 = 2.15, R1 = 2.45;
+var HITS = [], PLOT = {t:0,b:0,l:0,r:0}, hot = null;
+
+function visible(){
+  return data.filter(function(d){
+    if(!state.cats[d.cat]) return false;
+    if(!state.types[d.type]) return false;
+    if(!state.lics[d.licfam]) return false;
+    if(state.q){
+      var hay = (d.name+" "+d.unit+" "+d.type+" "+(d.model||"")+" "+d.loc+" "+d.built+" "+d.own+" "+d.lic).toLowerCase();
+      if(hay.indexOf(state.q)<0) return false;
+    }
+    return true;
+  });
+}
+
+function ticksX(a,b,w){
+  var ya=a.getFullYear(), yb=b.getFullYear(), span=yb-ya;
+  var step = span>70?10 : span>34?5 : span>14?2 : 1;
+  if(w<620) step = span>70?20 : span>34?10 : step;
+  var out=[], y=Math.ceil(ya/step)*step;
+  for(;y<=yb;y+=step) out.push(y);
+  return out;
+}
+
+function draw(){
+  var w = Math.max(340, svg.parentNode.clientWidth);
+  var h = Math.round(Math.min(760, Math.max(430, w*0.52)));
+  var iw = w - M.l - M.r, ih = h - M.t - M.b;
+
+  var a = state.x0 || X0, b = state.x1 || X1;
+  var span = b - a;
+  var X = function(dt){ return M.l + (dt - a)/span*iw; };
+  var Y = function(mw){ return M.t + ih - (mw+62)/(MWMAX+62)*ih; };
+
+  var vis = visible();
+  var s = [];
+  var LO = M.l - 30, HI = M.l + iw + 30;
+  HITS = [];
+  PLOT = {t:M.t, b:M.t+ih, l:M.l, r:M.l+iw};
+
+  // horizontal gridlines + y axis
+  s.push('<g class="grid">');
+  var mws=[0,200,400,600,800,1000,1200,1400];
+  mws.forEach(function(m){
+    s.push('<line x1="'+M.l+'" y1="'+Y(m).toFixed(1)+'" x2="'+(M.l+iw)+'" y2="'+Y(m).toFixed(1)+'" stroke="'+(m===0?"#cfc8b7":"#e6e0d1")+'" stroke-width="1"/>');
+  });
+  s.push('</g><g class="axis">');
+  mws.forEach(function(m){
+    s.push('<text x="'+(M.l-11)+'" y="'+(Y(m)+4).toFixed(1)+'" text-anchor="end">'+m+'</text>');
+  });
+  s.push('<text class="ttl" transform="translate(14,'+(M.t+ih/2)+') rotate(-90)" text-anchor="middle">Net capacity &middot; MW</text>');
+
+  // x axis
+  var yrsT = ticksX(a,b,w);
+  yrsT.forEach(function(y){
+    var px = X(new Date(y+"-01-01"));
+    if(px<M.l-1||px>M.l+iw+1) return;
+    s.push('<line x1="'+px.toFixed(1)+'" y1="'+M.t+'" x2="'+px.toFixed(1)+'" y2="'+(M.t+ih)+'" stroke="#ece6d8"/>');
+    s.push('<text x="'+px.toFixed(1)+'" y="'+(M.t+ih+20)+'" text-anchor="middle">'+y+'</text>');
+  });
+  s.push('<line x1="'+M.l+'" y1="'+(M.t+ih)+'" x2="'+(M.l+iw)+'" y2="'+(M.t+ih)+'" stroke="#514c42" stroke-width="1"/>');
+  s.push('<text class="ttl" x="'+(M.l+iw/2)+'" y="'+(h-5)+'" text-anchor="middle">Year</text>');
+  s.push('</g>');
+
+  // today line
+  var tx = X(TODAY);
+  if(tx>=M.l && tx<=M.l+iw){
+    s.push('<line x1="'+tx.toFixed(1)+'" y1="'+M.t+'" x2="'+tx.toFixed(1)+'" y2="'+(M.t+ih)+'" stroke="#a49b88" stroke-width="1" stroke-dasharray="2 4"/>');
+    s.push('<text x="'+(tx+6).toFixed(1)+'" y="'+(M.t+10)+'" fill="#9b9384" font-family="&quot;Pitch Sans&quot;,&quot;Courier New&quot;,monospace" font-size="9.5" letter-spacing="1.2">TODAY</text>');
+  }
+
+  // longest lines first so short ones stay grabbable on top
+  vis.sort(function(p,q){ return (q.e-q.s)-(p.e-p.s); });
+
+  s.push('<g id="bars">');
+  vis.forEach(function(d){
+    var x1=X(d.s), x2=X(d.e), y=Y(d.mw)+d.jy;
+    var col=colorOf(d);
+    if(x2 < M.l-40 || x1 > M.l+iw+40) return;
+    var cx1=Math.max(LO,x1), cx2=Math.min(HI,x2);
+    var lclip = x1<LO, rclip = x2>HI;
+    var wd=Math.max(0, cx2-cx1);
+    var Y1=y.toFixed(1);
+    s.push('<g class="bar" data-i="'+d.i+'">');
+
+    if(state.life && d.cl && d.cat!=="unfinished"){
+      var lx=Math.min(HI,X(d.cl));
+      if(lx>cx2){
+        s.push('<line x1="'+cx2.toFixed(1)+'" y1="'+Y1+'" x2="'+lx.toFixed(1)+'" y2="'+Y1+'" stroke="'+col+'" stroke-opacity=".3" stroke-width=".8"/>');
+        s.push('<circle cx="'+lx.toFixed(1)+'" cy="'+Y1+'" r="1.5" fill="'+col+'" fill-opacity=".42"/>');
+      }
+    }
+
+    // the connecting line
+    var dash = d.cat==="unfinished" ? ' stroke-dasharray="3 2.2"' : '';
+    if(d.cat==="building"){
+      var nx = Math.min(cx2, Math.max(cx1, X(TODAY)));
+      if(nx>cx1) s.push('<line x1="'+cx1.toFixed(1)+'" y1="'+Y1+'" x2="'+nx.toFixed(1)+'" y2="'+Y1+'" stroke="'+col+'" stroke-width="'+LW+'"/>');
+      if(cx2>nx) s.push('<line x1="'+nx.toFixed(1)+'" y1="'+Y1+'" x2="'+cx2.toFixed(1)+'" y2="'+Y1+'" stroke="'+col+'" stroke-width="'+LW+'" stroke-dasharray="1.4 2.1"/>');
+    } else if(d.cat==="planned"){
+      if(wd>0.4) s.push('<line x1="'+cx1.toFixed(1)+'" y1="'+Y1+'" x2="'+cx2.toFixed(1)+'" y2="'+Y1+'" stroke="'+col+'" stroke-width="'+LW+'" stroke-opacity=".5" stroke-dasharray=".9 2.4"/>');
+    } else if(wd>0.4){
+      s.push('<line x1="'+cx1.toFixed(1)+'" y1="'+Y1+'" x2="'+cx2.toFixed(1)+'" y2="'+Y1+'" stroke="'+col+'" stroke-width="'+LW+'" stroke-opacity="'+(d.cat==="noncomm"?".8":".92")+'"'+dash+'/>');
+    }
+
+    // start marker
+    if(!lclip){
+      if(d.cat==="planned")
+        s.push('<circle class="d0" cx="'+cx1.toFixed(1)+'" cy="'+Y1+'" r="'+R0+'" fill="var(--paper)" stroke="'+col+'" stroke-width=".9" stroke-opacity=".62"/>');
+      else
+        s.push('<circle class="d0" cx="'+cx1.toFixed(1)+'" cy="'+Y1+'" r="'+R0+'" fill="'+col+'"/>');
+    }
+
+    // end marker
+    if(!rclip){
+      var ex=cx2.toFixed(1);
+      if(d.cat==="comm"){
+        s.push('<circle class="d1" cx="'+ex+'" cy="'+Y1+'" r="'+R1+'" fill="'+col+'"/>');
+      } else if(d.cat==="noncomm"){
+        s.push('<circle class="d1" cx="'+ex+'" cy="'+Y1+'" r="'+R1+'" fill="var(--paper)" stroke="'+col+'" stroke-width=".9"/>');
+      } else if(d.cat==="unfinished"){
+        var c=cx2+3.2;
+        s.push('<path class="d1" d="M'+(c-2.5).toFixed(1)+' '+(y-2.5).toFixed(1)+' l5 5 M'+(c+2.5).toFixed(1)+' '+(y-2.5).toFixed(1)+' l-5 5" stroke="'+col+'" stroke-width="1.05" fill="none" stroke-linecap="round"/>');
+      } else if(d.cat==="planned"){
+        s.push('<rect class="d1" x="'+(cx2-2.2).toFixed(1)+'" y="'+(y-2.2).toFixed(1)+'" width="4.4" height="4.4" fill="var(--paper)" stroke="'+col+'" stroke-width=".9" stroke-opacity=".62"/>');
+      } else {
+        s.push('<path class="d1" d="M'+(cx2+3).toFixed(1)+' '+Y1+' L'+ex+' '+(y-3).toFixed(1)+' L'+(cx2-3).toFixed(1)+' '+Y1+' L'+ex+' '+(y+3).toFixed(1)+' Z" fill="var(--paper)" stroke="'+col+'" stroke-width=".9"/>');
+      }
+    }
+
+    s.push('<rect class="hit" x="'+(cx1-6).toFixed(1)+'" y="'+(y-7).toFixed(1)+'" width="'+(wd+14).toFixed(1)+'" height="14" rx="3" fill="none" stroke="none" stroke-width="1" pointer-events="none"/>');
+    s.push('</g>');
+    HITS.push({d:d, x1:cx1, x2:cx2+7, y:y});
+  });
+  s.push('</g>');
+  s.push('<rect id="sel" x="0" y="'+M.t+'" width="0" height="'+ih+'" fill="#232019" fill-opacity=".07" stroke="#232019" stroke-opacity=".35" style="display:none" pointer-events="none"/>');
+
+  svg.setAttribute("viewBox", "0 0 "+w+" "+h);
+  svg.setAttribute("width", w);
+  svg.setAttribute("height", h);
+  svg.innerHTML = s.join("");
+
+  // pair each HITS entry with its rendered group, in push order
+  var nodes = svg.querySelectorAll("#bars > g.bar");
+  for(var n=0; n<HITS.length; n++) HITS[n].g = nodes[n] || null;
+  hot = null;
+
+  drag.a=+a; drag.b=+b; drag.iw=iw; drag.down=null; drag.pan=null;
+  zread.textContent = a.getUTCFullYear()+"–"+b.getUTCFullYear()
+    + (state.x0? "" : "  · all");
+  stats(vis);
+}
+
+function esc(t){
+  return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+function fmt(dt,approx){
+  var m=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return (approx? "~" : "") + m[dt.getUTCMonth()]+" "+dt.getUTCFullYear();
+}
+function yrs(a,b){
+  var v=(b-a)/(365.2425*864e5);
+  return (v<10? v.toFixed(1) : Math.round(v)) + " yr";
+}
+
+var byI={}; data.forEach(function(d){ byI[d.i]=d; });
+
+function showTip(d, cx, cy){
+  var endLbl = d.cat==="unfinished" ? "Halted"
+             : (d.cat==="building" ? "Projected"
+             : (d.cat==="planned" ? "Target" : "Online"));
+  var energy;
+  if(d.cat==="unfinished") energy = "none &mdash; never operated";
+  else if(d.cat==="building") energy = "not yet operating";
+  else if(d.cat==="planned") energy = "not yet under construction";
+  else if(d.twh===null) energy = "no grid output";
+  else energy = "~"+(d.twh>=100? Math.round(d.twh) : d.twh.toFixed(1))+" TWh <span style='color:#9b9384'>est. over "+(d.yrsOn<1.5? d.yrsOn.toFixed(1) : Math.round(d.yrsOn))+" yr online</span>";
+
+  var lf = LICFAM[d.licfam];
+
+  tip.innerHTML =
+      "<div class='t'>"+esc(d.built || "Unknown builder")+"</div>"
+    + "<div class='t2'>"+esc(d.name)+(d.unit?" "+esc(d.unit):"")+"</div>"
+    + "<div class='m'>"+esc(d.loc)+"</div>"
+    + "<div class='m mono'>"+TYPE[d.type].label.toUpperCase()+(d.model? " &middot; "+esc(d.model) : "")+"</div>"
+    + "<div class='badge'><span class='lswatch' style='background:"+lf.c+"'></span>"+lf.short+"</div>"
+    + (d.bio? "<p class='bio'>"+esc(d.bio)+"</p>" : "<div style='height:9px'></div>")
+    + "<div><span class='k'>Status</span>"+CAT[d.cat].built+"</div>"
+    + "<div><span class='k'>Owner today</span>"+esc(d.own)+"</div>"
+    + (d.lic? "<div><span class='k'>Licensed as</span>"+esc(d.lic)+"</div>" : "")
+    + "<div style='margin-top:6px'><span class='k'>Energy</span><span class='v'>"+energy+"</span></div>"
+    + "<div><span class='k'>Capacity</span><span class='v'>"+(d.mw?d.mw+" MW":"not rated / no grid output")+"</span></div>"
+    + "<div style='margin-top:6px'><span class='k'>Start</span><span class='v'>"+fmt(d.s,d.approx)+"</span></div>"
+    + "<div><span class='k'>"+endLbl+"</span><span class='v'>"+fmt(d.e,d.approx)+"</span></div>"
+    + "<div><span class='k'>Build time</span><span class='v'>"+yrs(d.s,d.e)+"</span></div>"
+    + (d.cl? "<div><span class='k'>Shut down</span><span class='v'>"+fmt(d.cl,false)+"</span></div>" : "")
+    + (d.note? "<div class='nb'>"+esc(d.note)+"</div>" : "")
+    + (d.cat==="planned"? "<div class='nb' style='color:#9b9384'>Reactor construction has not begun; dates are the developer&rsquo;s or regulator&rsquo;s current targets.</div>" : "")
+    + (d.approx? "<div class='nb' style='color:#9b9384'>Dates approximate.</div>" : "");
+
+  var box = svg.parentNode.getBoundingClientRect();
+  var tw = tip.offsetWidth||280, th = tip.offsetHeight||200;
+  var px = Math.min(box.width-tw/2-8, Math.max(tw/2+8, cx-box.left));
+  var top = cy-box.top-14;
+  if(top-th < -box.top+8) top = cy-box.top+th+22;   // flip below when it would clip
+  tip.style.left = px+"px";
+  tip.style.top = top+"px";
+  tip.style.opacity = 1;
+}
+
+// Nearest-line hit test. Geometric rather than DOM-based, so a 0.9px line is
+// still easy to hover: we take the closest line whose x-range brackets the
+// cursor, within a vertical tolerance, then fall back to a wider radius.
+function pick(mx, my){
+  var best=null, bd=1e9;
+  for(var i=0;i<HITS.length;i++){
+    var t=HITS[i];
+    var dy=Math.abs(my-t.y);
+    if(dy>8) continue;
+    var dx = mx < t.x1-6 ? (t.x1-6)-mx : (mx > t.x2+6 ? mx-(t.x2+6) : 0);
+    if(dx>26) continue;
+    var score = dx*dx*2.2 + dy*dy;      // favour vertical closeness
+    if(score<bd){ bd=score; best=t; }
+  }
+  return best;
+}
+function clearHot(){
+  if(hot && hot.g) hot.g.classList.remove("hi");
+  hot=null; tip.style.opacity=0;
+}
+function hover(ev){
+  if(drag.down!==null || drag.pan!==null){ clearHot(); return; }
+  var p = evpt(ev);
+  if(p.x<PLOT.l-8 || p.x>PLOT.r+8 || p.y<PLOT.t-4 || p.y>PLOT.b+4){ clearHot(); return; }
+  var t = pick(p.x, p.y);
+  if(!t){ clearHot(); return; }
+  if(t!==hot){
+    if(hot && hot.g) hot.g.classList.remove("hi");
+    hot = t;
+    if(t.g){ t.g.classList.add("hi"); t.g.parentNode.appendChild(t.g); }
+  }
+  showTip(t.d, ev.clientX, ev.clientY);
+}
+
+function wire(){
+  svg.addEventListener("mousemove", hover);
+  svg.addEventListener("mouseleave", clearHot);
+
+  svg.addEventListener("wheel", function(ev){
+    var px = evx(ev);
+    if(px < M.l || px > M.l+drag.iw) return;
+    ev.preventDefault();
+    tip.style.opacity = 0;
+    var d = ev.deltaMode===1 ? ev.deltaY*16 : (ev.deltaMode===2 ? ev.deltaY*400 : ev.deltaY);
+    var f = Math.exp(Math.max(-1.1, Math.min(1.1, d*0.0035)));
+    zoomAt((px-M.l)/drag.iw, f);
+  }, {passive:false});
+
+  // drag left/right to zoom to a selection; shift-drag to pan
+  svg.addEventListener("mousedown", function(ev){
+    var px = evx(ev);
+    if(px<M.l||px>M.l+drag.iw) return;
+    ev.preventDefault();
+    tip.style.opacity = 0;
+    if(ev.shiftKey){
+      drag.pan = {px:px, a:drag.a, b:drag.b};
+      return;
+    }
+    drag.down=px;
+    var sel=document.getElementById("sel");
+    sel.style.display=""; sel.setAttribute("x",px); sel.setAttribute("width",0);
+  });
+  svg.addEventListener("dblclick", function(){ state.x0=null; state.x1=null; draw(); });
+}
+
+var drag = {down:null, pan:null, a:+X0, b:+X1, iw:1};
+function evx(ev){ return evpt(ev).x; }
+function evpt(ev){
+  var box = svg.getBoundingClientRect();
+  var vb = svg.viewBox.baseVal;
+  return {
+    x: (ev.clientX-box.left)*((vb&&vb.width? vb.width : box.width)/(box.width||1)),
+    y: (ev.clientY-box.top )*((vb&&vb.height? vb.height : box.height)/(box.height||1))
+  };
+}
+window.addEventListener("mousemove", function(ev){
+  if(drag.pan){
+    var p = drag.pan;
+    var dx = evx(ev) - p.px;
+    var shift = -dx/drag.iw*(p.b-p.a);
+    setView(p.a+shift, p.b+shift);
+    return;
+  }
+  if(drag.down===null) return;
+  var px = Math.max(M.l, Math.min(M.l+drag.iw, evx(ev)));
+  var sel=document.getElementById("sel");
+  if(!sel) return;
+  sel.setAttribute("x", Math.min(drag.down,px));
+  sel.setAttribute("width", Math.abs(px-drag.down));
+});
+window.addEventListener("mouseup", function(ev){
+  if(drag.pan){ drag.pan=null; return; }
+  if(drag.down===null) return;
+  var px = Math.max(M.l, Math.min(M.l+drag.iw, evx(ev)));
+  var lo=Math.min(drag.down,px), hi=Math.max(drag.down,px);
+  drag.down=null;
+  var sel=document.getElementById("sel");
+  if(sel) sel.style.display="none";
+  if(hi-lo>10){
+    setView(drag.a + (lo-M.l)/drag.iw*(drag.b-drag.a),
+            drag.a + (hi-M.l)/drag.iw*(drag.b-drag.a));
+  }
+});
+
+function stats(vis){
+  var fin = vis.filter(function(d){return d.cat==="comm"||d.cat==="noncomm";});
+  var avg = fin.length ? fin.reduce(function(t,d){return t+(d.e-d.s);},0)/fin.length/(365.2425*864e5) : 0;
+  var unf = vis.filter(function(d){return d.cat==="unfinished";});
+  var lostMW = unf.reduce(function(t,d){return t+d.mw;},0);
+  var builtMW = vis.filter(function(d){return d.cat==="comm";}).reduce(function(t,d){return t+d.mw;},0);
+  var longest = vis.slice().sort(function(p,q){return (q.e-q.s)-(p.e-p.s);})[0];
+
+  var cells = [
+    "<b>"+vis.length+"</b><span>Reactors shown</span>",
+    "<b>"+(fin.length? avg.toFixed(1)+" yr" : "—")+"</b><span>Avg. time to complete</span>",
+    "<b>"+(builtMW/1000).toFixed(1)+" GW</b><span>Capacity completed</span>",
+    "<b>"+unf.length+" &middot; "+(lostMW/1000).toFixed(1)+" GW</b><span>Abandoned mid-build</span>",
+    "<b style='font-size:18px;line-height:1.5'>"+(longest? esc(longest.name+" "+longest.unit)+" &middot; "+yrs(longest.s,longest.e) : "—")+"</b><span>Longest build shown</span>"
+  ];
+  document.getElementById("stats").innerHTML = cells.map(function(c){
+    return "<div class='stat'>"+c+"</div>";
+  }).join("");
+}
+
+wire();
+draw();
+var rt;
+window.addEventListener("resize", function(){ clearTimeout(rt); rt=setTimeout(draw,120); });
+})();
+</script>
+</body>
+</html>
