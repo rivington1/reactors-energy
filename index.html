@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Every Nuclear Reactor Built in the United States — Construction Timelines</title>
+<title>American Nuclear Renaissance</title>
 <meta name="description" content="An interactive chart of construction start and end dates for every nuclear power reactor built, abandoned, or currently under construction in the United States.">
 <style>
   :root{
@@ -17,31 +17,51 @@
     --l-doe:#8a4b9c; --l-mil:#6d6a5c; --l-none:#b0a897;
     /* Criticality — reserved, used nowhere else */
     --crit:#d81e05;
+    /* Electricity generated — reserved, used nowhere else */
+    --volt:#c9971a;
     /* Map status palette */
     --s-op:#2f7d5e; --s-off:#9b9384; --s-unf:#b23f3f; --s-bld:#2f6d96; --s-pln:#7a5aa2;
-    /* Primary — Unica 77, falling back to Arial */
-    --sans:"Unica 77","Unica77","Unica77 W01",Arial,Helvetica,"Helvetica Neue",sans-serif;
-    /* Secondary — Rosart, falling back to Times New Roman */
-    --serif:"Rosart","Rosart Text","Times New Roman",Times,serif;
-    /* Tertiary — Pitch Sans, falling back to Courier New. Detail info only. */
-    --mono:"Pitch Sans","PitchSans","Courier New",Courier,monospace;
+    /* Type stacks are built only from faces that actually ship on the machines
+       people read this on. No webfont request, no invisible-text flash, and
+       nothing falls back to Arial/Times/Courier New. */
+    /* Display — an old-style book serif for the masthead and section heads. */
+    --display:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua","Hoefler Text","Sitka Text",Georgia,serif;
+    /* Text serif — reading copy. */
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua","Hoefler Text","Sitka Text",Georgia,serif;
+    /* Grotesque — labels, UI, chart text. */
+    --sans:"Helvetica Neue",Helvetica,"Inter","Segoe UI",Roboto,-apple-system,BlinkMacSystemFont,sans-serif;
+    /* Mono — figures, datelines, micro-labels. */
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,"Cascadia Mono","Segoe UI Mono","Roboto Mono","Liberation Mono",monospace;
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);
     font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
-  .wrap{max-width:1180px;margin:0 auto;padding:48px 26px 76px}
+  /* Asymmetric measure: wider left margin than right, the way a printed page
+     is set, rather than a symmetric centred column. */
+  .wrap{max-width:1220px;margin:0 auto;padding:38px 30px 76px 58px}
 
   .kicker{font:400 10.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;
     color:var(--muted);margin:0 0 15px}
-  h1{font:400 41px/1.1 var(--sans);letter-spacing:-.02em;margin:0 0 13px;max-width:23ch}
-  .deck{margin:0;color:var(--ink-2);font:18px/1.52 var(--serif);max-width:68ch}
-  .deck em{font-style:italic;color:var(--ink)}
+  /* Masthead sets the title against a ragged-right dateline on one baseline. */
+  .masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:30px}
+  h1{font:400 58px/.94 var(--display);letter-spacing:-.021em;margin:0;max-width:15ch}
+  .dateline{flex:none;text-align:right;font:400 10px/1.7 var(--mono);letter-spacing:.15em;
+    text-transform:uppercase;color:var(--faint);padding-bottom:6px}
+  .dateline b{display:block;font-weight:400;color:var(--ink-2)}
+  .deck{margin:0;color:var(--ink-2);font:18.5px/1.5 var(--serif);max-width:56ch}
+  /* Standfirst drops an indent and a first-line lift, like a printed lede. */
+  .standfirst{margin:17px 0 0;max-width:52ch;font:19px/1.46 var(--serif);color:var(--ink-2)}
+  .deck em,.standfirst em{font-style:italic;color:var(--ink)}
   .rule{height:1px;background:var(--rule);margin:30px 0 0}
-  .rule.thick{height:2px;background:var(--ink);margin:26px 0 0}
+  /* Double rule — heavy over hairline, 3px apart. A printed-page device that
+     no default template produces. */
+  .rule.thick{height:0;border-top:2.5px solid var(--ink);border-bottom:1px solid var(--ink);
+    padding-top:3px;background:none;margin:22px 0 0}
 
   /* controls */
   .controls{display:flex;flex-wrap:wrap;gap:16px 32px;align-items:flex-start;
-    padding:17px 0 19px;border-bottom:1px solid var(--rule)}
+    padding:17px 0 19px;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+    margin-top:22px}
   .cgroup{min-width:0}
   .clabel{font:400 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;
     color:var(--faint);margin-bottom:10px}
@@ -84,11 +104,12 @@
   .bar.hi circle.d0,.bar.hi circle.d1{r:3.4}
   .bar.hi path.d1{stroke-width:1.7}
 
-  #tip{position:absolute;pointer-events:none;opacity:0;transform:translate(-50%,-100%);
+  /* Card is placed beside the line it describes, never over it — see place(). */
+  #tip{position:absolute;pointer-events:none;opacity:0;
     background:#fffdf8;border:1px solid var(--ink);padding:11px 13px 12px;
-    font:13px/1.45 var(--sans);width:max-content;max-width:392px;z-index:9;
+    font:13px/1.45 var(--sans);width:max-content;max-width:360px;z-index:9;
     box-shadow:3px 3px 0 rgba(35,32,25,.08);transition:opacity .08s}
-  #tip .t{font:400 17px/1.18 var(--sans);letter-spacing:-.016em;margin-bottom:1px}
+  #tip .t{font:400 20px/1.13 var(--display);letter-spacing:-.015em;margin-bottom:1px}
   #tip .t2{font:400 15px/1.24 var(--serif);font-style:italic;color:var(--ink-2);margin-bottom:3px}
   #tip .m{color:var(--muted);font-size:12.5px}
   #tip .m.mono{font:400 10.5px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--faint);margin-top:1px}
@@ -112,6 +133,11 @@
     font:400 10px var(--mono);letter-spacing:.09em;text-transform:uppercase}
   .critbadge .rg{width:9px;height:9px;flex:none;border-radius:50%;
     border:2px solid #fff;background:transparent}
+  /* electricity generated — same weight as criticality, different colour */
+  .voltbadge{display:flex;align-items:center;gap:7px;margin:5px 0 2px;
+    background:var(--volt);color:#231f14;padding:3px 8px 4px;
+    font:400 10px var(--mono);letter-spacing:.09em;text-transform:uppercase}
+  .voltbadge svg{flex:none;display:block}
   /* photograph band */
   .ph{margin:0 -13px 9px;background:#e7e2d6;border-bottom:1px solid var(--rule);
     position:relative;overflow:hidden}
@@ -125,7 +151,7 @@
 
   /* map */
   .mapwrap{margin-top:52px;padding-top:34px;border-top:2px solid var(--ink)}
-  .mapwrap h2{font:400 29px/1.12 var(--sans);letter-spacing:-.02em;margin:0 0 11px;max-width:26ch}
+  .mapwrap h2{font:400 34px/1.08 var(--display);letter-spacing:-.018em;margin:0 0 11px;max-width:24ch}
   .mapwrap .deck{font-size:16.5px;margin-bottom:2px}
   .mapbox{position:relative;margin-top:6px}
   #map{display:block;width:100%;height:auto}
@@ -133,11 +159,11 @@
   #map .mesh{fill:none;stroke:#d6cfbe;stroke-width:.8;stroke-linejoin:round}
   #map .site{cursor:crosshair}
   #map .site.hi circle.pin{stroke:var(--ink);stroke-width:1.3}
-  #mtip{position:absolute;pointer-events:none;opacity:0;transform:translate(-50%,-100%);
+  #mtip{position:absolute;pointer-events:none;opacity:0;
     background:#fffdf8;border:1px solid var(--ink);padding:11px 13px 12px;
-    font:13px/1.45 var(--sans);width:max-content;max-width:392px;z-index:9;
+    font:13px/1.45 var(--sans);width:max-content;max-width:360px;z-index:9;
     box-shadow:3px 3px 0 rgba(35,32,25,.08);transition:opacity .08s}
-  #mtip .t{font:400 17px/1.18 var(--sans);letter-spacing:-.016em;margin-bottom:1px}
+  #mtip .t{font:400 20px/1.13 var(--display);letter-spacing:-.015em;margin-bottom:1px}
   #mtip .t2{font:400 15px/1.24 var(--serif);font-style:italic;color:var(--ink-2);margin-bottom:3px}
   #mtip .m{color:var(--muted);font-size:12.5px}
   #mtip .m.mono{font:400 10.5px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--faint);margin-top:1px}
@@ -159,34 +185,32 @@
   #mtip .u .uy{font:400 10.5px var(--mono);color:var(--faint);font-variant-numeric:tabular-nums;flex:none}
   .mapfoot{font:400 13.5px/1.5 var(--serif);color:var(--muted);margin:14px 0 0;max-width:74ch}
 
-  /* stats */
-  .stats{display:flex;flex-wrap:wrap;margin:0;border-bottom:1px solid var(--rule)}
-  .stat{flex:1 1 158px;padding:16px 20px 17px 0}
-  .stat b{display:block;font:400 27px/1.1 var(--sans);letter-spacing:-.022em;
-    font-variant-numeric:tabular-nums;margin-bottom:5px}
-  .stat span{font:400 9.5px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
-
-  /* notes */
-  .notes{margin-top:36px;display:grid;grid-template-columns:1fr 1fr;gap:0 52px;
-    font:15.5px/1.56 var(--serif);color:var(--ink-2)}
-  .notes h2{grid-column:1/-1;font:400 10px/1 var(--mono);letter-spacing:.15em;
-    text-transform:uppercase;color:var(--faint);margin:0 0 15px}
-  .notes p{margin:0 0 14px}
-  .notes b{color:var(--ink);font-weight:400;font-style:italic}
-  .notes .fine{grid-column:1/-1;color:var(--muted);font-size:14px;
-    border-top:1px solid var(--rule);padding-top:14px;margin-top:5px}
-  .keyrow{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(238px,1fr));
-    gap:9px 26px;margin:0 0 22px;padding-bottom:20px;border-bottom:1px solid var(--rule-2)}
+  /* legend — sits under the chart, keyed like a printed map legend */
+  .legend{margin:0;padding:19px 0 21px;border-bottom:1px solid var(--rule);
+    display:grid;grid-template-columns:auto 1fr;gap:0 34px;align-items:start}
+  .legend h2{font:400 10px/1.5 var(--mono);letter-spacing:.15em;text-transform:uppercase;
+    color:var(--faint);margin:1px 0 0;white-space:nowrap}
+  .keyrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(228px,1fr));
+    gap:9px 30px;margin:0}
   .keyrow div{display:flex;align-items:center;gap:9px;font:13.5px var(--sans);color:var(--ink-2)}
   .keyrow i{color:var(--faint);font-style:normal;font-family:var(--mono);font-size:11px}
   .keyrow svg{flex:none;width:auto}
 
+  /* Capacity series — the lower panel of the main figure. No top margin, no
+     rule, no heading: it is meant to read as part of the chart above it, the
+     way a volume panel sits under a price chart. */
+  .capwrap{margin:0}
+  .capbox{margin:0}
+  #cap{display:block;width:100%;height:auto}
+  #cap .axis text{fill:var(--muted);font:400 11px var(--mono);font-variant-numeric:tabular-nums}
+
   @media (max-width:820px){
-    .wrap{padding:32px 18px 56px}
-    h1{font-size:29px}
-    .deck{font-size:16.5px}
-    .notes{grid-template-columns:1fr;gap:0}
-    .stat b{font-size:22px}
+    .wrap{padding:26px 16px 56px 18px}
+    h1{font-size:33px;max-width:none}
+    .masthead{display:block}
+    .dateline{text-align:left;padding:11px 0 0}
+    .deck,.standfirst{font-size:16.5px}
+    .legend{grid-template-columns:1fr;gap:13px 0}
     input[type=search]{width:142px}
   }
 </style>
@@ -194,12 +218,24 @@
 <body>
 <div class="wrap">
 <header>
-  <p class="kicker">Construction timelines &middot; 1949&ndash;present</p>
-  <h1>How long it takes to build a nuclear reactor in America</h1>
-  <p class="deck">Every power reactor the United States has started building since 1949 &mdash; finished, abandoned, or still going up today. Each line runs from the day concrete was first poured to the day the reactor entered commercial service, or to the day the project was halted. Height is the reactor's net electrical capacity; color is its technology, or the licence it was built under if you switch it. <em>Hover any line for the company that built it, the reactor's history, and its licensing pathway.</em></p>
+  <div class="masthead">
+    <h1>American Nuclear Renaissance</h1>
+  </div>
 </header>
 
 <div class="rule thick"></div>
+
+<div class="chartbox">
+  <svg id="chart" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div id="tip"></div>
+</div>
+
+<!-- The fleet total is a second panel of the same figure, not a separate chart:
+     it shares the time axis, the margins and the zoom window with the plot
+     above, and carries its own capacity axis in gigawatts. -->
+<div class="capwrap">
+  <div class="capbox"><svg id="cap" xmlns="http://www.w3.org/2000/svg"></svg></div>
+</div>
 
 <div class="controls">
   <div class="cgroup">
@@ -260,15 +296,8 @@
   </div>
 </div>
 
-<div class="chartbox">
-  <svg id="chart" xmlns="http://www.w3.org/2000/svg"></svg>
-  <div id="tip"></div>
-</div>
-
-<div class="stats" id="stats"></div>
-
-<div class="notes">
-  <h2>How to read this</h2>
+<div class="legend">
+  <h2>Key</h2>
   <div class="keyrow">
     <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="38" y2="6" stroke="#2f6d96" stroke-width="1.1"></line><circle cx="2.4" cy="6" r="2.2" fill="#2f6d96"></circle><circle cx="38" cy="6" r="2.5" fill="#2f6d96"></circle></svg> Completed and operated commercially</div>
     <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="38" y2="6" stroke="#2f6d96" stroke-width="1.1" stroke-opacity=".8"></line><circle cx="2.4" cy="6" r="2.2" fill="#2f6d96"></circle><circle cx="38" cy="6" r="2.5" fill="#f6f3ec" stroke="#2f6d96" stroke-width=".9"></circle></svg> Completed but never commercial <i>hollow end</i></div>
@@ -277,18 +306,8 @@
     <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="33" y2="6" stroke="#2f6d96" stroke-width="1" stroke-opacity=".45" stroke-dasharray=".9 2.4"></line><circle cx="2.4" cy="6" r="2" fill="#f6f3ec" stroke="#2f6d96" stroke-width=".9" stroke-opacity=".6"></circle><rect x="34.2" y="3.8" width="4.4" height="4.4" fill="#f6f3ec" stroke="#2f6d96" stroke-width=".9" stroke-opacity=".6"></rect></svg> Designed only, nothing built <i>faint dots, hollow</i></div>
     <div><svg width="46" height="14" viewBox="0 0 46 14"><line x1="2.4" y1="7" x2="33" y2="7" stroke="#2f6d96" stroke-width="1.1"></line><circle cx="2.4" cy="7" r="2.2" fill="#2f6d96"></circle><circle cx="33" cy="7" r="2.5" fill="#2f6d96"></circle><circle cx="33" cy="7" r="5.4" fill="none" stroke="#d81e05" stroke-width="1.35"></circle></svg> Achieved criticality <i>red ring</i></div>
     <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="26" y2="6" stroke="#2f6d96" stroke-width="1.1"></line><circle cx="2.4" cy="6" r="2.2" fill="#2f6d96"></circle><circle cx="26" cy="6" r="2.5" fill="#2f6d96"></circle><line x1="26" y1="6" x2="40" y2="6" stroke="#2f6d96" stroke-width="1.1" stroke-opacity=".34"></line><circle cx="40" cy="6" r="1.9" fill="#f6f3ec" stroke="#2f6d96" stroke-width=".85" stroke-opacity=".55"></circle></svg> Grid connection &rarr; commercial operation <i>faded tail</i></div>
+    <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="26" y2="6" stroke="#2f6d96" stroke-width="1.1"></line><circle cx="2.4" cy="6" r="2.2" fill="#2f6d96"></circle><circle cx="26" cy="6" r="2.5" fill="#2f6d96"></circle><path d="M35.4 1.3 L31.1 6.6 L33.7 6.6 L32.5 10.7 L36.8 5.4 L34.2 5.4 Z" fill="#c9971a" stroke="#231f14" stroke-width=".5" stroke-linejoin="round"></path></svg> Has generated electricity <i>bolt</i></div>
   </div>
-  <p><b>Vertical position is net electrical capacity in megawatts.</b> A handful of demonstration and research reactors currently being built produce no electricity for the grid, or have not published a net rating; those sit on the zero line. Reactors with identical capacity and identical dates &mdash; sister units at the same plant, poured together and finished together &mdash; are nudged a few pixels apart so you can tell them apart.</p>
-  <p><b>Two ways to lay out the time axis.</b> <i>One timeline</i> puts all ninety years on a single axis. That is the honest view, but it has a problem: the construction boom of 1967 to 1974 accounts for well over half of every reactor ever started in America, and on a ninety&#8209;year axis those eight years are a narrow, illegible band. <i>By decade</i> breaks the chart into one stacked panel per decade of construction start, so each era gets the full width of the page. Every panel uses the same number of years and the same number of pixels per megawatt, which means a line's length, slope and height mean the same thing in every panel and the decades can be read against one another. The panels are not all the same height, but only because each is cropped to the tallest reactor its own decade started &mdash; nothing in the 1950s was much above 800&nbsp;MW, so a panel running to 1,400 would be half empty. Cropping the quiet decades hands that space to the crowded ones without distorting anything, because the scale itself never changes: the gap between the 400 and 800&nbsp;MW gridlines is identical in every panel that has both. Each panel runs past its own ten years so that builds begun late in a decade still finish on screen; the faintly shaded region on the right of each panel is that spillover into later years. A few builds outran even that &mdash; Watts Bar 2 above all &mdash; and end in a double chevron meaning the line continues beyond the panel. Zoom and pan are switched off in this view, because every panel carries its own time axis and there is no longer a single window to move.</p>
-  <p><b>What counts as "never commercial."</b> Reactors in that category were built and, in most cases, generated power, but were government demonstration or experimental units rather than utility products sold into a rate base &mdash; Shippingport, EBR&#8209;I and EBR&#8209;II, the Sodium Reactor Experiment, Hanford N, Elk River, Hallam and their peers. Shoreham is the exception that proves the category: it was finished, licensed to full power, then sold to New York State for one dollar and dismantled without ever selling a kilowatt&#8209;hour commercially. Utility&#8209;owned reactors that did operate commercially, however briefly, stay in the commercial group &mdash; including Three Mile Island 2, which ran for three months.</p>
-  <p><b>Where a completed reactor's line ends.</b> Finishing a reactor is not a single event, so the line records two. The solid bar stops at <i>first grid connection</i> &mdash; the day the turbine was first synchronised to the electrical system and the plant put power onto the wires. The faded extension that follows runs to <i>commercial operation</i>, the later day the owner formally declared the unit in commercial service. For most plants the gap is a few months of power ascension testing. Occasionally it is much longer and tells you something: Fort St. Vrain took two and a half years, and Virgil C. Summer 1 took fourteen months. Reactors that never reached a grid have no tail, and neither do the cancelled projects.</p>
-  <p><b>Abandoned projects</b> end on the date construction was formally halted or cancelled, which is not always the date work physically stopped; several sites sat in limbo for years first. Bellefonte, Zimmer and WNP&#8209;1 were all more than half built. Zimmer was finished as a coal plant. Watts Bar 2, by contrast, appears as a completed reactor with a 43&#8209;year line: it was mothballed in 1985 and restarted in 2007.</p>
-  <p><b>Built versus designed only.</b> The five outcome toggles separate reactors that physically exist from those that do not. The first two categories are finished reactors that ran. "Part built, then abandoned" reactors have real concrete and, in several cases, an installed pressure vessel. "Being built now" means safety&#8209;related nuclear construction has actually begun. The last category, drawn in faint dots with hollow markers, is <i>design and licensing only</i> &mdash; a permit, an application under review, or a federal agreement exists, but no reactor has been built. Several of these projects have held publicised groundbreakings; those events were site clearing, transmission work or gas generation, not reactor construction, so the dates shown are the developer's or the regulator's current targets rather than a record of work done. Among the currently licensed advanced&#8209;reactor cohort, only Hermes 1, Hermes 2 and Kemmerer 1 have begun safety&#8209;related construction.</p>
-  <p><b>The licensing pathway</b> is a second, independent way to read the chart, and you can colour the lines by it. Almost every commercial reactor in America was licensed in two steps under 10&nbsp;CFR Part&nbsp;50: a construction permit first, then a separate operating licence years later once the plant was finished and inspected. Reactors that only ever got the permit &mdash; every cancelled project, plus the demonstration reactors going up right now &mdash; are a different bucket, and the split makes the abandonment wave of the late 1970s legible at a glance. Part&nbsp;52, introduced in the 1990s, replaced the two steps with a single combined licence; Vogtle 3 and 4 are the only reactors ever completed under it. Federally owned reactors, from the early national&#8209;laboratory experiments through today's Department of Energy pilot&#8209;programme units at Idaho, were never NRC&#8209;licensed at all and are authorised by DOE instead. Military reactors &mdash; the Army's compact plants, the Air Force's PM&#8209;1, the Navy's land&#8209;based prototypes &mdash; sit outside civilian licensing entirely. A handful of projects, Bodega Bay and Black Fox among them, never received any licence before being withdrawn. Note that there is no 10&nbsp;CFR Part&nbsp;57 for reactors; the NRC's new technology&#8209;inclusive framework is Part&nbsp;53, and no reactor has yet been licensed under it, so it does not appear here.</p>
-  <p><b>Dates in the tooltip marked <i>approximate</i></b> are either estimated from a start year with no published day, or are forward projections. Reactors under construction today end at their operator's projected completion date, drawn as a dotted extension past the present.</p>
-  <p><b>Ownership reflects the most recent public transfer.</b> Several shut&#8209;down plants are now held by decommissioning specialists rather than the original utility, and a few cancelled sites have passed to industrial developers, port authorities or state parks. Photographs on the hover card are pulled live from Wikipedia and Wikimedia Commons where one exists for that plant; many demonstration and cancelled reactors have no public photograph, and nothing is shown for them.</p>
-  <p><b>Reactors that have achieved criticality</b> are flagged with a red ring on the chart and a red band on the hover card. Criticality is the moment a reactor first sustains a nuclear chain reaction &mdash; the point at which it becomes a working reactor rather than a building. It is the milestone the current cohort of demonstration reactors is racing toward, and five of them have reached it since June 2026: Antares&rsquo; Mark&#8209;0, Valar Atomics&rsquo; Ward 250, Deployable Energy&rsquo;s Unity, Aalo Atomics&rsquo; Aalo&#8209;X and Oklo&rsquo;s Groves Isotope Test Reactor. All five are federally authorised units on or beside Department of Energy land, and all five are very small &mdash; between zero and ten megawatts electrical &mdash; which is why they sit almost on the zero line on a chart scaled for gigawatt&#8209;class plants. Switch the capacity axis to <i>Compressed</i> to pull them clear of the baseline, or press <i>Achieved criticality</i> to isolate them.</p>
-  <p class="fine">Data compiled from public records of U.S. commercial power reactors, cancelled reactor projects, and current construction permits. Capacities are net electrical output in megawatts as designed or as last uprated. The per&#8209;reactor histories shown on hover are short summaries of the public record and are intended as orientation, not as a citable source. To move around the timeline: scroll or pinch to zoom under the cursor, drag left or right to zoom to a selection, shift&#8209;drag to pan, and double&#8209;click or press All to zoom back out. Alt&#8209;click a reactor type or a licence to isolate it. Use the layout control to switch between one continuous timeline and a stacked panel per decade.</p>
 </div>
 
 <div class="mapwrap">
@@ -312,7 +331,7 @@
     <div id="mtip"></div>
   </div>
 
-  <p class="mapfoot">One circle per site, not per reactor, so a two&#8209;unit plant is a single dot; where a site holds reactors of different fates, the circle takes the colour of the furthest&#8209;along one and the hover card lists every unit. A red ring marks a site where a reactor has achieved criticality since 2026. Puerto Rico is shown in the inset box. Three reactors in this dataset sit outside any map of the United States and are not plotted: the Army&rsquo;s PM&#8209;2A at Camp Century in Greenland, the barge&#8209;mounted MH&#8209;1A moored in Gatun Lake in the Panama Canal Zone, and PM&#8209;3A at McMurdo Station in Antarctica.</p>
+  <p class="mapfoot">One circle per site, not per reactor. Three reactors here sit outside any map of the United States and are not plotted: the Army&rsquo;s PM&#8209;2A at Camp Century in Greenland, the barge&#8209;mounted MH&#8209;1A in the Panama Canal Zone, and PM&#8209;3A at McMurdo Station in Antarctica.</p>
 </div>
 </div>
 
@@ -550,6 +569,9 @@ Project Matador Nuclear|3|PWR|Westinghouse AP1000|1117|2028-06-01|2034-12-31||pl
 Project Matador Nuclear|4|PWR|Westinghouse AP1000|1117|2029-06-01|2035-12-31||planned|1|Fourth of four AP1000 units on one combined license application. Dates projected.|Carson County, Texas|Fermi America|Fermi America|NRC Part 52 combined license application, pending since 2025|p52
 Gravity|1|PWR|Deep Fission DFR-15|15|2026-09-01|2027-12-31||planned|1|Borehole reactor 1.6 km underground; only site characterization drilling done so far. Dates projected.|Parsons, Kansas|Deep Fission|Deep Fission|DOE nuclear safety design agreement signed, 2026|doe
 Project Tetra|1|MSR|Terrestrial Energy IMSR|390|2028-06-01|2032-12-31||planned|1|DOE other transaction agreement only; no construction authorization yet. Dates projected.|Bryan, Texas|Terrestrial Energy|Terrestrial Energy|DOE other transaction agreement, no authorization, 2026|doe
+Palisades|1R|PWR|Combustion Engineering|805|2024-10-01|2026-12-31||building|1|Restart of the unit shut in May 2022. The NRC authorised the return to service in 2025 and fresh fuel is on site; Holtec has slipped the grid date repeatedly through 2026. Would be the first American reactor ever to restart after a permanent shutdown.|Covert Township, Michigan|Consumers Power (original build)|Holtec International|Restart under the reinstated 10 CFR Part 50 operating licence|p50ol
+Crane Clean Energy Center|1|PWR|B&W|819|2024-09-20|2027-06-30||building|1|Three Mile Island Unit 1, shut in 2019 and renamed for Constellation's late chief executive, being restarted against a twenty-year power agreement with Microsoft. Fuel deliveries and the NRC environmental review ran through 2026.|Middletown, Pennsylvania|Metropolitan Edison (original build)|Constellation Energy|Restart under the reinstated 10 CFR Part 50 operating licence|p50ol
+Duane Arnold|1R|BWR|BWR-4|601|2025-01-01|2029-03-31||planned|1|Restart of the unit shut in August 2020, underwritten by a twenty-five year power agreement with Google. NextEra targets a return early in 2029.|Palo, Iowa|Iowa Electric Light and Power (original build)|NextEra Energy Resources|Restart under the reinstated 10 CFR Part 50 operating licence|p50ol
 `;
 var REACTORS=RAW.trim().split("\n").map(function(l){var p=l.split("|");return{name:p[0],unit:p[1],type:p[2],model:p[3]||null,mw:+p[4],start:p[5],end:p[6],closed:p[7]||null,cat:p[8],approx:!!p[9],note:p[10]||"",loc:p[11]||"",built:p[12]||"",own:p[13]||"",lic:p[14]||"",licfam:p[15]||"none",crit:p[16]||null,cod:p[17]||null};});
 
@@ -588,6 +610,21 @@ var TYPE = {
   Other:{c:"var(--other)", label:"Other"}
 };
 
+// Reactors in the modern cohort that have actually produced electricity, as
+// opposed to merely reaching criticality. Every American reactor built before
+// this cohort that was finished at all also generated power, so the distinction
+// only does useful work here; keeping it as a small lookup avoids adding a
+// nineteenth column to 227 rows of data for the sake of a handful of entries.
+// Keyed name|unit, matching the bio keys.
+var VOLTS = {
+  "Ward 250|1": "Reached 10 kW thermal on 22 June 2026, the first electricity generated by a "
+              + "privately built American reactor. On 1 July it ran at roughly 100 kW thermal, "
+              + "converted the heat to electricity through a thermoelectric generator and "
+              + "powered a desktop computer serving a website."
+};
+function voltKey(d){ return d.name + "|" + (d.unit || ""); }
+function hasVolts(d){ return VOLTS.hasOwnProperty(voltKey(d)); }
+
 var CAT = {
   comm:      {label:"Built and ran commercially", built:"Completed and operated"},
   noncomm:   {label:"Built, never commercial",     built:"Completed and operated"},
@@ -624,7 +661,11 @@ var state = {
   critOnly: false,
   yscale: "lin",
   layout: "one",
-  x0: null, x1: null
+  x0: null, x1: null,
+  // Capacity-axis window, held in *transformed* units (megawatts on the linear
+  // scale, sqrt-megawatts on the compressed one) so the zoom arithmetic is the
+  // same either way. Cleared whenever the scale mode changes.
+  y0: null, y1: null
 };
 
 var data = REACTORS.map(function(r,i){
@@ -807,6 +848,9 @@ critBtn.onclick = function(){
 var ysLin = document.getElementById("ys-lin"), ysSqrt = document.getElementById("ys-sqrt");
 function setYScale(m){
   state.yscale = m;
+  // The stored capacity window is in transformed units, so it means something
+  // different under each scale. Reset rather than silently mistranslate it.
+  state.y0 = null; state.y1 = null;
   ysLin.classList.toggle("on", m==="lin");
   ysSqrt.classList.toggle("on", m==="sqrt");
   draw();
@@ -861,9 +905,75 @@ function panBy(frac){
   var v = curView(), d = (v[1]-v[0])*frac;
   setView(v[0]+d, v[1]+d);
 }
-document.getElementById("reset").onclick = function(){ state.x0=null; state.x1=null; draw(); };
-document.getElementById("zin").onclick  = function(){ zoomAt(.5, 1/1.6); };
-document.getElementById("zout").onclick = function(){ zoomAt(.5, 1.6); };
+
+// ---------- capacity-axis zoom ----------
+// The chart is two-dimensional, so the wheel zooms both axes at once. Ninety
+// years of reactors on one plot means the 800–1,250 MW band is a solid mat of
+// lines; being able to pull that band open vertically is the only way to read it.
+// The window is stored in *transformed* units — megawatts under the linear scale,
+// square-root megawatts under the compressed one — so a single set of arithmetic
+// serves both. `null` means "fit everything", which is what the page opens with.
+var YSPAN = {a:0, b:1, sq:false, max:1, pad:0};
+
+function curViewY(sq, ymax, ypad){
+  if(state.y0 === null || state.y1 === null) return [-ypad, ymax];
+  return [state.y0, state.y1];
+}
+function setViewY(a, b){
+  var full = YSPAN.max + YSPAN.pad, lo = -YSPAN.pad, hi = YSPAN.max;
+  var MINY = full * 0.012;                 // deepest useful zoom: ~1% of the axis
+  if(b - a < MINY){ var m = (a+b)/2; a = m - MINY/2; b = m + MINY/2; }
+  if(b - a >= full){ state.y0 = null; state.y1 = null; return; }
+  if(a < lo){ b += (lo-a); a = lo; }
+  if(b > hi){ a -= (b-hi); b = hi; }
+  if(a < lo) a = lo;
+  state.y0 = a; state.y1 = b;
+}
+// `frac` is measured from the top of the plot, where capacity is highest.
+function zoomAtY(frac, factor){
+  var a = YSPAN.a, b = YSPAN.b, sp = b - a;
+  var anchor = b - frac*sp, ns = sp*factor;
+  setViewY(anchor - (1-frac)*ns, anchor + frac*ns);
+}
+function panByY(frac){
+  var d = (YSPAN.b - YSPAN.a) * frac;
+  setViewY(YSPAN.a + d, YSPAN.b + d);
+}
+function resetView(){ state.x0=null; state.x1=null; state.y0=null; state.y1=null; draw(); }
+
+// Gridline values for whatever capacity window is showing. Under the linear
+// scale a plain 1–2–5 progression is right; under the compressed one the labels
+// have to be chosen in megawatts but spaced by their square roots, so we walk a
+// candidate ladder and keep the values that land inside the window.
+function niceStep(raw){
+  var e = Math.pow(10, Math.floor(Math.log(raw)/Math.LN10)), f = raw/e;
+  return (f<=1?1 : f<=2?2 : f<=5?5 : 10) * e;
+}
+function ticksY(v0, v1, sq){
+  var out = [], i;
+  if(sq){
+    var LADDER = [0,1,2,5,10,20,30,50,75,100,150,200,300,400,500,600,700,800,900,
+                  1000,1100,1200,1300,1400];
+    for(i=0;i<LADDER.length;i++){
+      var t = Math.sqrt(LADDER[i]);
+      if(t >= v0-1e-9 && t <= v1+1e-9) out.push(LADDER[i]);
+    }
+    // A very tight window can strand every ladder value; fall back to the ends.
+    if(out.length < 2){
+      var a = Math.max(0, v0), b = Math.max(a, v1);
+      out = [Math.round(a*a), Math.round(b*b)];
+    }
+    return out;
+  }
+  var step = niceStep((v1-v0)/6) || 1;
+  var start = Math.ceil(Math.max(0, v0)/step)*step;
+  for(i=start; i<=v1+1e-9 && out.length<24; i+=step) out.push(Math.round(i));
+  if(!out.length) out = [Math.round(Math.max(0,v0)), Math.round(v1)];
+  return out;
+}
+document.getElementById("reset").onclick = resetView;
+document.getElementById("zin").onclick  = function(){ zoomAtY(.5, 1/1.6); zoomAt(.5, 1/1.6); };
+document.getElementById("zout").onclick = function(){ zoomAtY(.5, 1.6); zoomAt(.5, 1.6); };
 document.getElementById("pl").onclick   = function(){ panBy(-.28); };
 document.getElementById("pr").onclick   = function(){ panBy(.28); };
 [].forEach.call(document.querySelectorAll("button.era"), function(b){
@@ -874,11 +984,13 @@ document.getElementById("pr").onclick   = function(){ panBy(.28); };
 document.addEventListener("keydown", function(ev){
   if(/^(INPUT|TEXTAREA)$/.test(ev.target.tagName)) return;
   if(zoomLocked()) return;
-  if(ev.key==="+"||ev.key==="="){ zoomAt(.5,1/1.6); ev.preventDefault(); }
-  else if(ev.key==="-"||ev.key==="_"){ zoomAt(.5,1.6); ev.preventDefault(); }
+  if(ev.key==="+"||ev.key==="="){ zoomAtY(.5,1/1.6); zoomAt(.5,1/1.6); ev.preventDefault(); }
+  else if(ev.key==="-"||ev.key==="_"){ zoomAtY(.5,1.6); zoomAt(.5,1.6); ev.preventDefault(); }
   else if(ev.key==="ArrowLeft"){ panBy(-.2); ev.preventDefault(); }
   else if(ev.key==="ArrowRight"){ panBy(.2); ev.preventDefault(); }
-  else if(ev.key==="0"){ state.x0=null; state.x1=null; draw(); }
+  else if(ev.key==="ArrowUp"){ panByY(.18); draw(); ev.preventDefault(); }
+  else if(ev.key==="ArrowDown"){ panByY(-.18); draw(); ev.preventDefault(); }
+  else if(ev.key==="0"){ resetView(); }
 });
 
 // ---------- chart ----------
@@ -915,6 +1027,10 @@ function ticksX(a,b,w){
 function draw(){
   if(state.layout === "decade") drawDecades();
   else drawOne();
+  // The fleet panel is the lower half of the same figure, so it redraws with
+  // the plot above it — including on every zoom frame, which is what keeps the
+  // two time axes locked together.
+  drawCap();
 }
 
 function drawOne(){
@@ -931,7 +1047,13 @@ function drawOne(){
   var sq = state.yscale === "sqrt";
   var YT = sq ? function(mw){ return Math.sqrt(mw); } : function(mw){ return mw; };
   var YMAX = YT(MWMAX), YPAD = sq ? 1.15 : 62;
-  var Y = function(mw){ return M.t + ih - (YT(mw)+YPAD)/(YMAX+YPAD)*ih; };
+  // The capacity window, like the time window, is a pair of bounds the wheel can
+  // narrow. Held in transformed units so the arithmetic is identical under both
+  // scales; null means "show everything".
+  var v = curViewY(sq, YMAX, YPAD);
+  var v0 = v[0], v1 = v[1];
+  var Y = function(mw){ return M.t + ih - (YT(mw)-v0)/(v1-v0)*ih; };
+  YSPAN = {a:v0, b:v1, sq:sq, max:YMAX, pad:YPAD};
 
   var vis = visible();
   var s = [];
@@ -941,7 +1063,7 @@ function drawOne(){
 
   // horizontal gridlines + y axis
   s.push('<g class="grid">');
-  var mws = sq ? [0,10,50,100,200,400,700,1000,1400] : [0,200,400,600,800,1000,1200,1400];
+  var mws = ticksY(v0, v1, sq);
   mws.forEach(function(m){
     s.push('<line x1="'+M.l+'" y1="'+Y(m).toFixed(1)+'" x2="'+(M.l+iw)+'" y2="'+Y(m).toFixed(1)+'" stroke="'+(m===0?"#cfc8b7":"#e6e0d1")+'" stroke-width="1"/>');
   });
@@ -967,7 +1089,7 @@ function drawOne(){
   var tx = X(TODAY);
   if(tx>=M.l && tx<=M.l+iw){
     s.push('<line x1="'+tx.toFixed(1)+'" y1="'+M.t+'" x2="'+tx.toFixed(1)+'" y2="'+(M.t+ih)+'" stroke="#a49b88" stroke-width="1" stroke-dasharray="2 4"/>');
-    s.push('<text x="'+(tx+6).toFixed(1)+'" y="'+(M.t+10)+'" fill="#9b9384" font-family="&quot;Pitch Sans&quot;,&quot;Courier New&quot;,monospace" font-size="9.5" letter-spacing="1.2">TODAY</text>');
+    s.push('<text x="'+(tx+6).toFixed(1)+'" y="'+(M.t+10)+'" fill="#9b9384" font-family="ui-monospace,&quot;SF Mono&quot;,Menlo,&quot;Cascadia Mono&quot;,&quot;Roboto Mono&quot;,monospace" font-size="9.5" letter-spacing="1.2">TODAY</text>');
   }
 
   s.push('<g id="bars">');
@@ -985,7 +1107,6 @@ function drawOne(){
   drag.a=+a; drag.b=+b; drag.iw=iw; drag.down=null; drag.pan=null;
   zread.textContent = a.getUTCFullYear()+"–"+b.getUTCFullYear()
     + (state.x0? "" : "  · all");
-  stats(vis);
 }
 
 // Pair each HITS entry with its rendered group, in push order. Both the single
@@ -1174,6 +1295,22 @@ function emitBars(vis, X, Y, LO, HI, s, opt){
       }
     }
 
+    // A lightning bolt for the reactors that have not merely gone critical but
+    // actually turned heat into electricity. Criticality is a chain reaction;
+    // this is a working power plant, however small, and it deserves its own mark.
+    if(hasVolts(d) && !rclip){
+      var bx = cx2 + 7.4;
+      if(bx <= HI){
+        s.push('<path class="volt" d="M'+(bx+2.1).toFixed(1)+' '+(y-5.1).toFixed(1)
+             + ' L'+(bx-2.3).toFixed(1)+' '+(y+.4).toFixed(1)
+             + ' L'+(bx+.4).toFixed(1)+' '+(y+.4).toFixed(1)
+             + ' L'+(bx-.8).toFixed(1)+' '+(y+5.2).toFixed(1)
+             + ' L'+(bx+3.6).toFixed(1)+' '+(y-.3).toFixed(1)
+             + ' L'+(bx+.9).toFixed(1)+' '+(y-.3).toFixed(1)
+             + ' Z" fill="var(--volt)" stroke="var(--ink)" stroke-width=".5" stroke-linejoin="round"/>');
+      }
+    }
+
     var hx2 = xcod!==null ? xcod : cx2;
     s.push('<rect class="hit" x="'+(cx1-6).toFixed(1)+'" y="'+(y-7).toFixed(1)+'" width="'+(Math.max(0,hx2-cx1)+14).toFixed(1)+'" height="14" rx="3" fill="none" stroke="none" stroke-width="1" pointer-events="none"/>');
     s.push('</g>');
@@ -1236,7 +1373,6 @@ function drawDecades(){
       + 'No reactors match the current filters.</text></g>';
     bindHits();
     zread.textContent = "by decade";
-    stats(vis);
     return;
   }
 
@@ -1331,7 +1467,7 @@ function drawDecades(){
     var tx = X(+TODAY);
     if(tx>=M.l && tx<=M.l+pw){
       s.push('<line x1="'+tx.toFixed(1)+'" y1="'+y0+'" x2="'+tx.toFixed(1)+'" y2="'+y1+'" stroke="#a49b88" stroke-width="1" stroke-dasharray="2 4"/>');
-      s.push('<text x="'+(tx+5).toFixed(1)+'" y="'+(y0+10)+'" fill="#9b9384" font-family="&quot;Pitch Sans&quot;,&quot;Courier New&quot;,monospace" font-size="9" letter-spacing="1.1">TODAY</text>');
+      s.push('<text x="'+(tx+5).toFixed(1)+'" y="'+(y0+10)+'" fill="#9b9384" font-family="ui-monospace,&quot;SF Mono&quot;,Menlo,&quot;Cascadia Mono&quot;,&quot;Roboto Mono&quot;,monospace" font-size="9" letter-spacing="1.1">TODAY</text>');
     }
 
     s.push('</g>');
@@ -1348,7 +1484,7 @@ function drawDecades(){
   });
   s.push('</g>');
 
-  s.push('<text class="ttl" transform="translate(13,'+(M.t+(h-M.t)/2)+') rotate(-90)" text-anchor="middle" fill="#a49b88" font-family="&quot;Pitch Sans&quot;,&quot;Courier New&quot;,monospace" font-size="9.5" letter-spacing="1.4">NET CAPACITY · MW</text>');
+  s.push('<text class="ttl" transform="translate(13,'+(M.t+(h-M.t)/2)+') rotate(-90)" text-anchor="middle" fill="#a49b88" font-family="ui-monospace,&quot;SF Mono&quot;,Menlo,&quot;Cascadia Mono&quot;,&quot;Roboto Mono&quot;,monospace" font-size="9.5" letter-spacing="1.4">NET CAPACITY · MW</text>');
 
   svg.setAttribute("viewBox", "0 0 "+w+" "+h);
   svg.setAttribute("width", w);
@@ -1362,7 +1498,6 @@ function drawDecades(){
   drag.down=null; drag.pan=null; drag.iw=pw;
   PLOT = {t:M.t, b:cursor, l:M.l, r:M.l+pw};
   zread.textContent = decs.length+" decades · "+SPANY+"-year panels";
-  stats(vis);
 }
 
 function esc(t){
@@ -1397,7 +1532,20 @@ function phTokens(name){
   return name.toLowerCase().replace(/[^a-z0-9 ]+/g," ").split(/\s+/)
     .filter(function(t){ return t.length>=4 && !PH_STOP[t]; });
 }
+// A few of the newest reactors have no Wikipedia article and so will never turn
+// up a photograph through the search below. Where the builder publishes its own
+// image of the machine, point straight at it.
+var PHOTO_FIXED = {
+  "Ward 250": {url:"https://www.valaratomics.com/heros/ward-250.webp",
+               title:"Ward 250, Emery County, Utah", cr:"Valar Atomics"}
+};
+
 function photoHTML(d){
+  var fx = PHOTO_FIXED[d.name];
+  if(fx)
+    return "<div class='ph'><img src='"+esc(fx.url)+"' alt='"+esc(d.name)+"'"
+         + " onerror=\"this.parentNode.style.display='none'\">"
+         + "<span class='cr'>"+esc(fx.title)+" &middot; "+esc(fx.cr)+"</span></div>";
   if(!PHOTO.hasOwnProperty(d.name))
     return "<div class='ph'><div class='ld'>Looking for a photograph&hellip;</div></div>";
   var p = PHOTO[d.name];
@@ -1406,6 +1554,7 @@ function photoHTML(d){
        + "<span class='cr'>"+esc(p.title)+" &middot; Wikimedia</span></div>";
 }
 function fetchPhoto(d, done){
+  if(PHOTO_FIXED[d.name]) return;
   if(PHOTO.hasOwnProperty(d.name) || PHOTOQ[d.name]) return;
   if(typeof fetch !== "function"){ PHOTO[d.name]=null; return; }
   PHOTOQ[d.name] = true;
@@ -1441,6 +1590,9 @@ function tipHTML(d){
     + "<div class='t'>"+esc(d.built || "Unknown builder")+"</div>"
     + "<div class='t2'>"+esc(d.name)+(d.unit?" "+esc(d.unit):"")+"</div>"
     + (d.crit? "<div class='critbadge'><span class='rg'></span>Achieved criticality &middot; "+fmtd(d.crit)+"</div>" : "")
+    + (hasVolts(d)? "<div class='voltbadge'><svg width='9' height='12' viewBox='0 0 9 12' aria-hidden='true'>"
+        + "<path d='M6.6 .5 L.8 6.4 L3.9 6.4 L2.6 11.5 L8.3 5.3 L5.2 5.3 Z' fill='#231f14'/></svg>"
+        + "Has generated electricity</div>" : "")
     + "<div class='m'>"+esc(d.loc)+"</div>"
     + "<div class='m mono'>"+TYPE[d.type].label.toUpperCase()+(d.model? " &middot; "+esc(d.model) : "")+"</div>"
     + "<div class='badge'><span class='lswatch' style='background:"+lf.c+"'></span>"+lf.short+"</div>"
@@ -1454,30 +1606,34 @@ function tipHTML(d){
     + (d.cod? "<div class='kv'><span class='k'>Commercial operation</span><span class='v'>"+fmt(d.cod,false)+"</span></div>" : "")
     + "<div class='kv'><span class='k'>Build time</span><span class='v'>"+yrs(d.s,d.e)+"</span></div>"
     + (d.cl? "<div class='kv'><span class='k'>Shut down</span><span class='v'>"+fmt(d.cl,false)+"</span></div>" : "")
+    + (hasVolts(d)? "<div class='nb'>"+esc(VOLTS[voltKey(d)])+"</div>" : "")
     + (d.note? "<div class='nb'>"+esc(d.note)+"</div>" : "")
     + (d.cat==="planned"? "<div class='nb' style='color:#9b9384'>Reactor construction has not begun; dates are the developer&rsquo;s or regulator&rsquo;s current targets.</div>" : "")
     + (d.approx? "<div class='nb' style='color:#9b9384'>Dates approximate.</div>" : "");
 }
 
-// The card is translated (-50%,-100%), so `top` is its bottom edge and `left` is
-// its horizontal centre, both relative to the host box. A card carrying a
-// photograph is tall enough to fall off screen, so the vertical position is
-// clamped into the viewport: sit above the cursor by default, drop below when
-// that would clip the top, and if the card is taller than the window just pin it
-// as high as it will go.
+// The card sits beside what you clicked, never on top of it: the point of
+// hovering a line is to read the line, and a card centred over the cursor hides
+// the very thing being inspected. Default is to the right of the cursor with a
+// clear gap; flip to the left when that would run off the page, and centre
+// vertically on the cursor, clamped into the viewport. `left`/`top` are the
+// card's own top-left corner (no CSS transform), relative to the host box.
 function place(el, host, cx, cy){
   var box = host.getBoundingClientRect();
-  var vh  = window.innerHeight || 800;
-  var tw = el.offsetWidth||280, th = el.offsetHeight||200;
-  var px = Math.min(box.width-tw/2-8, Math.max(tw/2+8, cx-box.left));
-  var lo = th + 8 - box.top;          // lowest bottom edge that keeps the top visible
-  var hi = vh - 8 - box.top;          // highest bottom edge that stays on screen
-  var top = cy - box.top - 14;        // preferred: just above the cursor
-  if(top < lo) top = cy - box.top + 22 + th;   // flip below the cursor
-  if(top > hi) top = hi;
-  if(top < lo) top = lo;              // taller than the window: show the top
-  el.style.left = px+"px";
-  el.style.top = top+"px";
+  var vw = window.innerWidth || 1200, vh = window.innerHeight || 800;
+  var tw = el.offsetWidth||300, th = el.offsetHeight||220;
+  var GAP = 24;
+
+  var lx = cx + GAP;                                  // preferred: to the right
+  if(lx + tw > vw - 12) lx = cx - GAP - tw;           // no room: flip left
+  if(lx < 12) lx = Math.min(Math.max(12, vw - tw - 12), cx + GAP);
+
+  var ty = cy - th/2;                                 // vertically centred on the point
+  if(ty + th > vh - 10) ty = vh - 10 - th;
+  if(ty < 10) ty = 10;
+
+  el.style.left = (lx - box.left)+"px";
+  el.style.top  = (ty - box.top)+"px";
   el.style.opacity = 1;
 }
 
@@ -1532,15 +1688,20 @@ function wire(){
   svg.addEventListener("mousemove", hover);
   svg.addEventListener("mouseleave", clearHot);
 
+  // The wheel zooms both axes about the pointer, so scrolling into a crowded
+  // patch pulls it open in time *and* in capacity rather than just stretching it
+  // sideways. zoomAtY only rewrites the window; zoomAt redraws once for both.
   svg.addEventListener("wheel", function(ev){
     if(zoomLocked()) return;
-    var px = evx(ev);
-    if(px < M.l || px > M.l+drag.iw) return;
+    var p = evpt(ev);
+    if(p.x < M.l || p.x > M.l+drag.iw) return;
     ev.preventDefault();
     tip.style.opacity = 0;
     var d = ev.deltaMode===1 ? ev.deltaY*16 : (ev.deltaMode===2 ? ev.deltaY*400 : ev.deltaY);
     var f = Math.exp(Math.max(-1.1, Math.min(1.1, d*0.0035)));
-    zoomAt((px-M.l)/drag.iw, f);
+    var ph = (PLOT.b - PLOT.t) || 1;
+    zoomAtY(Math.max(0, Math.min(1, (p.y-PLOT.t)/ph)), f);
+    zoomAt((p.x-M.l)/drag.iw, f);
   }, {passive:false});
 
   // drag left/right to zoom to a selection; shift-drag to pan
@@ -1551,7 +1712,7 @@ function wire(){
     ev.preventDefault();
     tip.style.opacity = 0;
     if(ev.shiftKey){
-      drag.pan = {px:px, a:drag.a, b:drag.b};
+      drag.pan = {px:px, py:evpt(ev).y, a:drag.a, b:drag.b, ya:YSPAN.a, yb:YSPAN.b};
       return;
     }
     drag.down=px;
@@ -1560,7 +1721,7 @@ function wire(){
   });
   svg.addEventListener("dblclick", function(){
     if(zoomLocked()) return;
-    state.x0=null; state.x1=null; draw();
+    resetView();
   });
 }
 
@@ -1577,9 +1738,13 @@ function evpt(ev){
 window.addEventListener("mousemove", function(ev){
   if(zoomLocked()) return;
   if(drag.pan){
-    var p = drag.pan;
-    var dx = evx(ev) - p.px;
-    var shift = -dx/drag.iw*(p.b-p.a);
+    var p = drag.pan, pt = evpt(ev);
+    var ph = (PLOT.b - PLOT.t) || 1;
+    // Dragging down should bring higher-capacity reactors into view, so the
+    // capacity window moves with the cursor rather than against it.
+    var yshift = (pt.y - p.py)/ph*(p.yb-p.ya);
+    setViewY(p.ya + yshift, p.yb + yshift);
+    var shift = -(pt.x - p.px)/drag.iw*(p.b-p.a);
     setView(p.a+shift, p.b+shift);
     return;
   }
@@ -1605,24 +1770,152 @@ window.addEventListener("mouseup", function(ev){
   }
 });
 
-function stats(vis){
-  var fin = vis.filter(function(d){return d.cat==="comm"||d.cat==="noncomm";});
-  var avg = fin.length ? fin.reduce(function(t,d){return t+(d.e-d.s);},0)/fin.length/(365.2425*864e5) : 0;
-  var unf = vis.filter(function(d){return d.cat==="unfinished";});
-  var lostMW = unf.reduce(function(t,d){return t+d.mw;},0);
-  var builtMW = vis.filter(function(d){return d.cat==="comm";}).reduce(function(t,d){return t+d.mw;},0);
-  var longest = vis.slice().sort(function(p,q){return (q.e-q.s)-(p.e-p.s);})[0];
+// ================= aggregate fleet capacity =================
+// One line, no controls, no filters: the sum of every reactor above. A reactor
+// joins the total on the day it first delivered power to the grid and leaves it
+// on the day it shut down for good, which is why the curve climbs almost
+// vertically through the 1970s, plateaus for thirty years, and then sags. The
+// dotted continuation adds everything now being built or licensed, on the
+// assumption every one of them finishes on its current target date — a generous
+// assumption, and the whole point of the chart above is that it usually isn't met.
+var capSvg = document.getElementById("cap");
 
-  var cells = [
-    "<b>"+vis.length+"</b><span>Reactors shown</span>",
-    "<b>"+(fin.length? avg.toFixed(1)+" yr" : "—")+"</b><span>Avg. time to complete</span>",
-    "<b>"+(builtMW/1000).toFixed(1)+" GW</b><span>Capacity completed</span>",
-    "<b>"+unf.length+" &middot; "+(lostMW/1000).toFixed(1)+" GW</b><span>Abandoned mid-build</span>",
-    "<b style='font-size:18px;line-height:1.5'>"+(longest? esc(longest.name+" "+longest.unit)+" &middot; "+yrs(longest.s,longest.e) : "—")+"</b><span>Longest build shown</span>"
-  ];
-  document.getElementById("stats").innerHTML = cells.map(function(c){
-    return "<div class='stat'>"+c+"</div>";
-  }).join("");
+function capSeries(cats, until){
+  var ev = [];
+  data.forEach(function(d){
+    if(cats.indexOf(d.cat) < 0) return;
+    if(!d.mw) return;
+    var on = d.cod || d.e;
+    if(!on || isNaN(+on)) return;
+    if(until && +on > +until) return;
+    ev.push({t:+on, mw:d.mw});
+    if(d.cl && !isNaN(+d.cl) && (!until || +d.cl <= +until)) ev.push({t:+d.cl, mw:-d.mw});
+  });
+  ev.sort(function(p,q){ return p.t - q.t; });
+  var out = [], run = 0;
+  for(var i=0;i<ev.length;i++){
+    run += ev[i].mw;
+    // Collapse same-day events into a single step so the path has one vertex.
+    if(i+1 < ev.length && ev[i+1].t === ev[i].t) continue;
+    out.push([ev[i].t, run]);
+  }
+  return out;
+}
+
+// The two series never change — they are the whole dataset, not a filtered view —
+// so build them once and reuse them on every redraw. drawCap now runs on every
+// zoom frame, and re-walking 227 reactors each time would be wasted work.
+var CAPSER = null;
+function capData(){
+  if(!CAPSER) CAPSER = {
+    built:  capSeries(["comm","noncomm"], TODAY),
+    future: capSeries(["comm","noncomm","building","planned"], null)
+  };
+  return CAPSER;
+}
+
+// The fleet total is drawn as the lower panel of the same figure as the chart
+// above: same left and right margins, same time window, so a vertical line
+// through both would cut the same date. Deliberately short — it is a reference
+// strip, not a second chart competing with the first. In the decade layout the
+// plot above has no single continuous time axis to borrow, so the panel falls
+// back to the full span and labels its own years.
+function drawCap(){
+  if(!capSvg) return;
+  var w = Math.max(320, capSvg.parentNode.clientWidth);
+  var h = 132;
+  var joined = state.layout === "one" && drag.a && drag.b;
+  var m = {t:10, r:M.r, b:joined ? 12 : 26, l:M.l};
+  var iw = w-m.l-m.r, ih = h-m.t-m.b;
+
+  var A = joined ? +drag.a : +X0, B = joined ? +drag.b : +X1;
+  var cs = capData(), built = cs.built, future = cs.future;
+
+  var peak = 0, now = 0, i;
+  for(i=0;i<built.length;i++){ if(built[i][1]>peak) peak = built[i][1]; now = built[i][1]; }
+  var top = 0;
+  for(i=0;i<future.length;i++) if(future[i][1]>top) top = future[i][1];
+  var YMX = Math.ceil(Math.max(top, peak)/10000)*10000 || 120000;
+  // Only a couple of gridlines: the panel is 132px tall and its job is to give
+  // the shape of the curve, not to be read off to the nearest gigawatt.
+  var GSTEP = YMX > 80000 ? 50000 : 25000;
+
+  var X = function(t){ return m.l + (t-A)/(B-A)*iw; };
+  var Y = function(mw){ return m.t + ih - mw/YMX*ih; };
+  var inwin = function(t){ return t >= A && t <= B; };
+
+  // A step path: capacity holds flat between events, then jumps. Events to the
+  // left of the window collapse into the starting level, and the walk stops one
+  // step past the right edge, so a deep zoom does not emit thousands of vertices
+  // at coordinates far outside the panel.
+  function stepPath(pts, from){
+    if(!pts.length) return "";
+    var RIGHT = m.l + iw + 20;
+    var p = ["M"+X(Math.max(A, pts[0][0])).toFixed(1)+" "+Y(from||0).toFixed(1)];
+    for(var k=0;k<pts.length;k++){
+      var x = X(pts[k][0]);
+      if(x < m.l) { p = ["M"+m.l+" "+Y(pts[k][1]).toFixed(1)]; continue; }
+      var done = x >= RIGHT;
+      if(done) x = RIGHT;
+      p.push("L"+x.toFixed(1)+" "+Y(k?pts[k-1][1]:(from||0)).toFixed(1));
+      p.push("L"+x.toFixed(1)+" "+Y(pts[k][1]).toFixed(1));
+      if(done) break;
+    }
+    return p.join(" ");
+  }
+
+  var MONO = 'ui-monospace,&quot;SF Mono&quot;,Menlo,&quot;Cascadia Mono&quot;,&quot;Roboto Mono&quot;,monospace';
+  var s = [], g, yr, px;
+  // Zooming keeps the lines inside the panel rather than letting them run out
+  // under the capacity labels on the left.
+  s.push('<defs><clipPath id="capclip"><rect x="'+m.l+'" y="'+(m.t-6)+'" width="'+iw+'" height="'+(ih+6)+'"/></clipPath></defs>');
+  s.push('<g class="grid">');
+  for(g=0; g<=YMX; g+=GSTEP){
+    s.push('<line x1="'+m.l+'" y1="'+Y(g).toFixed(1)+'" x2="'+(m.l+iw)+'" y2="'+Y(g).toFixed(1)+'" stroke="'+(g===0?"#cfc8b7":"#eae4d6")+'" stroke-width="1"/>');
+  }
+  s.push('</g><g class="axis">');
+  for(g=0; g<=YMX; g+=GSTEP){
+    s.push('<text x="'+(m.l-11)+'" y="'+(Y(g)+3.8).toFixed(1)+'" text-anchor="end">'+(g/1000)+'</text>');
+  }
+  // In the joined layout the plot above already carries the year labels, and
+  // both panels share the same time mapping, so repeating them here would just
+  // print the same row of numbers twice.
+  if(!joined){
+    for(yr=1960; yr<=2035; yr+=10){
+      px = X(+new Date(yr+"-01-01"));
+      s.push('<text x="'+px.toFixed(1)+'" y="'+(m.t+ih+18)+'" text-anchor="middle">'+yr+'</text>');
+    }
+  }
+  s.push('<text class="ttl" transform="translate(14,'+(m.t+ih/2)+') rotate(-90)" text-anchor="middle">Fleet total &middot; GW</text>');
+  s.push('</g>');
+
+  // projection first, so the solid record draws over it
+  var tx = X(+TODAY), shown = inwin(+TODAY);
+  s.push('<g clip-path="url(#capclip)">');
+  s.push('<path d="'+stepPath(future)+'" fill="none" stroke="#2f6d96" stroke-width="1.35" stroke-opacity=".45" stroke-dasharray="2.6 2.6"/>');
+  s.push('<path d="'+stepPath(built)+'" fill="none" stroke="#2f6d96" stroke-width="1.9"/>');
+  if(shown){
+    s.push('<circle cx="'+tx.toFixed(1)+'" cy="'+Y(now).toFixed(1)+'" r="2.9" fill="#2f6d96"/>');
+    s.push('<line x1="'+tx.toFixed(1)+'" y1="'+m.t+'" x2="'+tx.toFixed(1)+'" y2="'+(m.t+ih)+'" stroke="#a49b88" stroke-width="1" stroke-dasharray="2 4"/>');
+  }
+  s.push('</g>');
+
+  // Only annotate the present when the present is on screen; a "97 GW today"
+  // caption floating over a window that ends in 2005 would be nonsense.
+  if(shown)
+    s.push('<text x="'+(tx+7).toFixed(1)+'" y="'+(Y(now)-7).toFixed(1)+'" fill="#2f6d96" font-family="'+MONO+'" font-size="10.5">'+(now/1000).toFixed(1)+' GW today</text>');
+
+  // A two-word key, set inline at the right, so the dashed line reads without a
+  // paragraph of explanation underneath the figure.
+  s.push('<g font-family="'+MONO+'" font-size="9" letter-spacing="1.1" fill="#9b9384">');
+  s.push('<line x1="'+(m.l+iw-118)+'" y1="'+(m.t+5)+'" x2="'+(m.l+iw-104)+'" y2="'+(m.t+5)+'" stroke="#2f6d96" stroke-width="1.9"/>');
+  s.push('<text x="'+(m.l+iw-99)+'" y="'+(m.t+8.4)+'">ON THE GRID</text>');
+  s.push('<line x1="'+(m.l+iw-118)+'" y1="'+(m.t+18)+'" x2="'+(m.l+iw-104)+'" y2="'+(m.t+18)+'" stroke="#2f6d96" stroke-width="1.35" stroke-opacity=".45" stroke-dasharray="2.6 2.6"/>');
+  s.push('<text x="'+(m.l+iw-99)+'" y="'+(m.t+21.4)+'">+ PLANNED</text>');
+  s.push('</g>');
+
+  capSvg.setAttribute("viewBox", "0 0 "+w+" "+h);
+  capSvg.innerHTML = s.join("");
 }
 
 // ================= map =================
@@ -1728,7 +2021,7 @@ function drawMap(){
   s.push('<path class="mesh" d="'+MAP_STATES+'"/>');
   s.push('<path class="land" d="'+MAP_PR+'"/>');
   s.push('<path class="mesh" d="'+MAP_PR+'"/>');
-  s.push('<text x="872" y="562" fill="#9b9384" font-family="&quot;Pitch Sans&quot;,&quot;Courier New&quot;,monospace" font-size="9" letter-spacing="1.1">PUERTO RICO</text>');
+  s.push('<text x="872" y="562" fill="#9b9384" font-family="ui-monospace,&quot;SF Mono&quot;,Menlo,&quot;Cascadia Mono&quot;,&quot;Roboto Mono&quot;,monospace" font-size="9" letter-spacing="1.1">PUERTO RICO</text>');
 
   var live = [], nre = 0;
   SITES.forEach(function(st){
@@ -1807,10 +2100,13 @@ mapSvg.addEventListener("mousemove", function(ev){
 mapSvg.addEventListener("mouseleave", clearMhot);
 
 wire();
-draw();
+draw();          // draws the plot and the fleet panel beneath it
 drawMap();
 var rt;
-window.addEventListener("resize", function(){ clearTimeout(rt); rt=setTimeout(draw,120); });
+window.addEventListener("resize", function(){
+  clearTimeout(rt);
+  rt = setTimeout(draw, 120);
+});
 })();
 </script>
 </body>
