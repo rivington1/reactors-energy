@@ -58,17 +58,25 @@
   .rule.thick{height:0;border-top:2.5px solid var(--ink);border-bottom:1px solid var(--ink);
     padding-top:3px;background:none;margin:22px 0 0}
 
-  /* controls */
-  .controls{display:flex;flex-wrap:wrap;gap:16px 32px;align-items:flex-start;
-    padding:17px 0 19px;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
-    margin-top:22px}
-  .cgroup{min-width:0}
-  .clabel{font:400 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;
-    color:var(--faint);margin-bottom:10px}
-  .chips{display:flex;flex-wrap:wrap;gap:4px 20px}
+  /* Controls. Each group stacks its labels one above the next, the way a printed
+     map legend sets its keys. The groups themselves flow through newspaper
+     columns rather than wrapping as flex rows: a wrapped row is only as short as
+     its tallest member, which left a third of the band empty, whereas columns
+     pack the short groups in beside the long ones. */
+  .controls{columns:4 206px;column-gap:26px;
+    padding:13px 0 4px;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+    margin-top:18px}
+  .cgroup{min-width:0;break-inside:avoid;-webkit-column-break-inside:avoid;
+    margin:0 0 11px}
+  .clabel{font:400 9.5px/1 var(--mono);letter-spacing:.13em;text-transform:uppercase;
+    color:var(--faint);margin-bottom:7px}
+  .chips{display:flex;flex-direction:column;align-items:flex-start;gap:1px}
   .chip{display:inline-flex;align-items:center;gap:7px;cursor:pointer;user-select:none;
-    font-size:13.5px;color:var(--ink);padding:2px 0;border-bottom:1px solid transparent;
-    transition:color .12s,opacity .12s,border-color .12s;white-space:nowrap}
+    font-size:12.5px;color:var(--ink);padding:0;border-bottom:1px solid transparent;
+    transition:color .12s,opacity .12s,border-color .12s;line-height:1.5;
+    /* Wrap rather than overrun: a long label must never spill into the next
+       column, however narrow the viewport gets. */
+    white-space:normal;max-width:100%}
   .chip:hover{border-bottom-color:var(--ink)}
   .chip.off{color:var(--faint);opacity:.62}
   .chip.off .sw,.chip.off .dot{opacity:.3}
@@ -185,15 +193,17 @@
   #mtip .u .uy{font:400 10.5px var(--mono);color:var(--faint);font-variant-numeric:tabular-nums;flex:none}
   .mapfoot{font:400 13.5px/1.5 var(--serif);color:var(--muted);margin:14px 0 0;max-width:74ch}
 
-  /* legend — sits under the chart, keyed like a printed map legend */
-  .legend{margin:0;padding:19px 0 21px;border-bottom:1px solid var(--rule);
-    display:grid;grid-template-columns:auto 1fr;gap:0 34px;align-items:start}
-  .legend h2{font:400 10px/1.5 var(--mono);letter-spacing:.15em;text-transform:uppercase;
+  /* Legend — sits under the chart, keyed like a printed map legend, its entries
+     stacked one above the next in a single narrow column so the whole key can
+     be taken in at a glance instead of scanned across the page. */
+  .legend{margin:0;padding:13px 0 14px;border-bottom:1px solid var(--rule);
+    display:grid;grid-template-columns:auto 1fr;gap:0 26px;align-items:start}
+  .legend h2{font:400 9.5px/1.5 var(--mono);letter-spacing:.13em;text-transform:uppercase;
     color:var(--faint);margin:1px 0 0;white-space:nowrap}
-  .keyrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(228px,1fr));
-    gap:9px 30px;margin:0}
-  .keyrow div{display:flex;align-items:center;gap:9px;font:13.5px var(--sans);color:var(--ink-2)}
-  .keyrow i{color:var(--faint);font-style:normal;font-family:var(--mono);font-size:11px}
+  .keyrow{display:flex;flex-direction:column;align-items:flex-start;gap:1px;margin:0}
+  .keyrow div{display:flex;align-items:center;gap:8px;font:12.5px/1.5 var(--sans);
+    color:var(--ink-2);max-width:100%}
+  .keyrow i{color:var(--faint);font-style:normal;font-family:var(--mono);font-size:10.5px}
   .keyrow svg{flex:none;width:auto}
 
   /* Capacity series — the lower panel of the main figure. No top margin, no
@@ -210,8 +220,16 @@
     .masthead{display:block}
     .dateline{text-align:left;padding:11px 0 0}
     .deck,.standfirst{font-size:16.5px}
-    .legend{grid-template-columns:1fr;gap:13px 0}
+    .legend{grid-template-columns:1fr;gap:8px 0}
     input[type=search]{width:142px}
+  }
+  /* Phones only. The 206px column minimum collapses to a single column below
+     about 430px, which stacked all eight groups into a band nearly three
+     screens tall; a narrower minimum keeps two columns. Scoped tighter than
+     the layout breakpoint above on purpose: at tablet width the default rule
+     still fits three columns, and forcing two there made the band taller. */
+  @media (max-width:600px){
+    .controls{columns:2 146px;column-gap:20px}
   }
 </style>
 </head>
@@ -305,7 +323,6 @@
     <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="19" y2="6" stroke="#2f6d96" stroke-width="1.1"></line><line x1="19" y1="6" x2="35" y2="6" stroke="#2f6d96" stroke-width="1.1" stroke-dasharray="1.4 2.1"></line><circle cx="2.4" cy="6" r="2.2" fill="#2f6d96"></circle><path d="M40.4 6 L38 3.4 L35.6 6 L38 8.6 Z" fill="#f6f3ec" stroke="#2f6d96" stroke-width=".9"></path></svg> Being built now <i>dotted = projected</i></div>
     <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="33" y2="6" stroke="#2f6d96" stroke-width="1" stroke-opacity=".45" stroke-dasharray=".9 2.4"></line><circle cx="2.4" cy="6" r="2" fill="#f6f3ec" stroke="#2f6d96" stroke-width=".9" stroke-opacity=".6"></circle><rect x="34.2" y="3.8" width="4.4" height="4.4" fill="#f6f3ec" stroke="#2f6d96" stroke-width=".9" stroke-opacity=".6"></rect></svg> Designed only, nothing built <i>faint dots, hollow</i></div>
     <div><svg width="46" height="14" viewBox="0 0 46 14"><line x1="2.4" y1="7" x2="33" y2="7" stroke="#2f6d96" stroke-width="1.1"></line><circle cx="2.4" cy="7" r="2.2" fill="#2f6d96"></circle><circle cx="33" cy="7" r="2.5" fill="#2f6d96"></circle><circle cx="33" cy="7" r="5.4" fill="none" stroke="#d81e05" stroke-width="1.35"></circle></svg> Achieved criticality <i>red ring</i></div>
-    <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="26" y2="6" stroke="#2f6d96" stroke-width="1.1"></line><circle cx="2.4" cy="6" r="2.2" fill="#2f6d96"></circle><circle cx="26" cy="6" r="2.5" fill="#2f6d96"></circle><line x1="26" y1="6" x2="40" y2="6" stroke="#2f6d96" stroke-width="1.1" stroke-opacity=".34"></line><circle cx="40" cy="6" r="1.9" fill="#f6f3ec" stroke="#2f6d96" stroke-width=".85" stroke-opacity=".55"></circle></svg> Grid connection &rarr; commercial operation <i>faded tail</i></div>
     <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="26" y2="6" stroke="#2f6d96" stroke-width="1.1"></line><circle cx="2.4" cy="6" r="2.2" fill="#2f6d96"></circle><circle cx="26" cy="6" r="2.5" fill="#2f6d96"></circle><path d="M35.4 1.3 L31.1 6.6 L33.7 6.6 L32.5 10.7 L36.8 5.4 L34.2 5.4 Z" fill="#c9971a" stroke="#231f14" stroke-width=".5" stroke-linejoin="round"></path></svg> Has generated electricity <i>bolt</i></div>
   </div>
 </div>
@@ -315,7 +332,7 @@
   <h2>Every American reactor site, built or not</h2>
   <p class="deck">The same reactors, placed on the ground. Sites are coloured by what happened to them: still running, shut down, half built and abandoned, under construction today, or designed and licensed but never begun. Circle size is net capacity. <em>Hover any site for every reactor on it.</em></p>
 
-  <div class="controls" style="margin-top:20px;border-top:1px solid var(--rule)">
+  <div class="controls" style="margin-top:20px;border-top:1px solid var(--rule);columns:2 206px">
     <div class="cgroup">
       <div class="clabel">Show &mdash; click to add or remove</div>
       <div class="chips" id="mstat"></div>
@@ -633,17 +650,19 @@ var CAT = {
   planned:   {label:"Designed only, not built",    built:"Design and licensing only &mdash; nothing built"}
 };
 
-// Licence family, precomputed in data.js from the full licence string.
+// Licence family, precomputed in data.js from the full licence string. `label` is
+// the toggle text and has to fit a narrow column, so it is kept terse; `short`
+// is the tooltip badge, where there is room to spell the pathway out.
 var LICFAM = {
-  p50ol:{c:"var(--l-p50ol)", label:"Part 50 &mdash; construction permit and operating licence",
-         short:"Part 50, permit + operating licence"},
-  p50cp:{c:"var(--l-p50cp)", label:"Part 50 &mdash; construction permit only",
+  p50ol:{c:"var(--l-p50ol)", label:"Part 50 &mdash; permit and licence",
+         short:"Part 50, construction permit + operating licence"},
+  p50cp:{c:"var(--l-p50cp)", label:"Part 50 &mdash; permit only",
          short:"Part 50, construction permit only"},
   p52:  {c:"var(--l-p52)",   label:"Part 52 &mdash; combined licence",
          short:"Part 52 combined licence"},
-  doe:  {c:"var(--l-doe)",   label:"Federal &mdash; Department of Energy authority",
+  doe:  {c:"var(--l-doe)",   label:"Federal &mdash; DOE authority",
          short:"DOE / federal authorisation"},
-  mil:  {c:"var(--l-mil)",   label:"Military &mdash; Navy, Army or Air Force",
+  mil:  {c:"var(--l-mil)",   label:"Military &mdash; Navy, Army, USAF",
          short:"Military reactor programme"},
   none: {c:"var(--l-none)",  label:"No licence ever issued",
          short:"No licence issued"}
@@ -668,11 +687,26 @@ var state = {
   y0: null, y1: null
 };
 
+// Each bar runs construction start to commercial operation. Grid connection —
+// usually weeks, occasionally years, earlier — used to get its own marker and a
+// faded tail, which cost the chart a second symbol for very little information.
+// The date is kept on the record as `gc` so the tooltip can still report it.
+function endOf(r){
+  var e = new Date(r.end);
+  if(r.cod){ var c = new Date(r.cod); if(+c > +e) return c; }
+  return e;
+}
+function gridOf(r){
+  if(!r.cod) return null;
+  var e = new Date(r.end);
+  return (+new Date(r.cod) > +e) ? e : null;
+}
+
 var data = REACTORS.map(function(r,i){
   return {
     i:i, name:r.name, unit:r.unit, type:(TYPE[r.type]?r.type:"Other"),
     model:r.model, mw:r.mw,
-    s:new Date(r.start), e:new Date(r.end),
+    s:new Date(r.start), e:endOf(r), gc:gridOf(r),
     cl:r.closed?new Date(r.closed):null,
     crit:r.crit?new Date(r.crit):null,
     cod:r.cod?new Date(r.cod):null,
@@ -1220,20 +1254,10 @@ function emitBars(vis, X, Y, LO, HI, s, opt){
     var Y1=y.toFixed(1);
     s.push('<g class="bar" data-i="'+d.i+'">');
 
-    // Grid connection is where the solid bar stops. Commercial operation, which
-    // can trail it by months or in a few cases years, gets a faded extension with
-    // a hollow terminal dot, so the reader can see both without confusing them.
-    var xcod = null;
-    if(d.cod && d.cod > d.e){
-      xcod = Math.min(HI, X(d.cod));
-      if(xcod > cx2 + 0.3){
-        s.push('<line x1="'+cx2.toFixed(1)+'" y1="'+Y1+'" x2="'+xcod.toFixed(1)+'" y2="'+Y1+'" stroke="'+col+'" stroke-opacity=".34" stroke-width="'+LW+'"/>');
-        s.push('<circle class="dc" cx="'+xcod.toFixed(1)+'" cy="'+Y1+'" r="1.85" fill="var(--paper)" stroke="'+col+'" stroke-width=".85" stroke-opacity=".55"/>');
-      } else { xcod = null; }
-    }
-
+    // The bar ends at commercial operation (see endOf). Nothing is drawn for the
+    // grid-connection date any more.
     if(state.life && d.cl && d.cat!=="unfinished"){
-      var lx=Math.min(HI,X(d.cl)), lfrom = xcod!==null ? xcod : cx2;
+      var lx=Math.min(HI,X(d.cl)), lfrom = cx2;
       if(lx>lfrom){
         s.push('<line x1="'+lfrom.toFixed(1)+'" y1="'+Y1+'" x2="'+lx.toFixed(1)+'" y2="'+Y1+'" stroke="'+col+'" stroke-opacity=".3" stroke-width=".8"/>');
         s.push('<circle cx="'+lx.toFixed(1)+'" cy="'+Y1+'" r="1.5" fill="'+col+'" fill-opacity=".42"/>');
@@ -1311,7 +1335,7 @@ function emitBars(vis, X, Y, LO, HI, s, opt){
       }
     }
 
-    var hx2 = xcod!==null ? xcod : cx2;
+    var hx2 = cx2;
     s.push('<rect class="hit" x="'+(cx1-6).toFixed(1)+'" y="'+(y-7).toFixed(1)+'" width="'+(Math.max(0,hx2-cx1)+14).toFixed(1)+'" height="14" rx="3" fill="none" stroke="none" stroke-width="1" pointer-events="none"/>');
     s.push('</g>');
     HITS.push({d:d, x1:cx1, x2:hx2+7, y:y});
@@ -1584,7 +1608,7 @@ function fetchPhoto(d, done){
 function tipHTML(d){
   var endLbl = d.cat==="unfinished" ? "Halted"
              : (d.cat==="building" ? (d.crit ? "Critical" : "Projected")
-             : (d.cat==="planned" ? "Target" : (d.cod ? "Grid connection" : "Online")));
+             : (d.cat==="planned" ? "Target" : (d.cod ? "Commercial operation" : "Online")));
   var lf = LICFAM[d.licfam];
   return photoHTML(d)
     + "<div class='t'>"+esc(d.built || "Unknown builder")+"</div>"
@@ -1603,7 +1627,7 @@ function tipHTML(d){
     + "<div class='kv' style='margin-top:6px'><span class='k'>Capacity</span><span class='v'>"+(d.mw?d.mw+" MW":"not rated / no grid output")+"</span></div>"
     + "<div class='kv' style='margin-top:6px'><span class='k'>Start</span><span class='v'>"+fmt(d.s,d.approx)+"</span></div>"
     + "<div class='kv'><span class='k'>"+endLbl+"</span><span class='v'>"+(d.crit? fmtd(d.crit) : fmt(d.e,d.approx))+"</span></div>"
-    + (d.cod? "<div class='kv'><span class='k'>Commercial operation</span><span class='v'>"+fmt(d.cod,false)+"</span></div>" : "")
+    + (d.gc? "<div class='kv'><span class='k'>First on the grid</span><span class='v'>"+fmt(d.gc,false)+"</span></div>" : "")
     + "<div class='kv'><span class='k'>Build time</span><span class='v'>"+yrs(d.s,d.e)+"</span></div>"
     + (d.cl? "<div class='kv'><span class='k'>Shut down</span><span class='v'>"+fmt(d.cl,false)+"</span></div>" : "")
     + (hasVolts(d)? "<div class='nb'>"+esc(VOLTS[voltKey(d)])+"</div>" : "")
