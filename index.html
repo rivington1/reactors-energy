@@ -43,8 +43,16 @@
   .kicker{font:400 10.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;
     color:var(--muted);margin:0 0 15px}
   /* Masthead sets the title against a ragged-right dateline on one baseline. */
-  .masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:30px}
-  h1{font:400 58px/.94 var(--display);letter-spacing:-.021em;margin:0;max-width:15ch}
+  .masthead{display:block}
+  /* The headline is a full sentence set across the entire screen, not the text
+     column: it escapes the wrap to full-bleed and is sized on the viewport so
+     it always fills one line edge to edge. Phones let it wrap instead. */
+  h1{font:400 3.5vw/1.06 var(--display);letter-spacing:-.021em;margin:0;
+    width:100vw;margin-left:calc(50% - 50vw);padding:0 2vw;
+    max-width:none;text-align:center;white-space:nowrap}
+  @media (max-width:700px){
+    h1{white-space:normal;font-size:29px;text-wrap:balance}
+  }
   .dateline{flex:none;text-align:right;font:400 10px/1.7 var(--mono);letter-spacing:.15em;
     text-transform:uppercase;color:var(--faint);padding-bottom:6px}
   .dateline b{display:block;font-weight:400;color:var(--ink-2)}
@@ -101,11 +109,14 @@
   /* chart */
   .chartbox{position:relative;padding:20px 0 2px}
   svg{display:block;width:100%;height:auto;touch-action:pan-y}
-  .axis text{fill:var(--muted);font:400 11px var(--mono);font-variant-numeric:tabular-nums}
-  .axis .ttl{fill:var(--faint);font:400 9.5px var(--mono);letter-spacing:.14em;text-transform:uppercase}
+  /* Axis type is set in the same book serif as the running text — the numerals
+     come out oldstyle, which is what makes the figure read as set by a person
+     rather than printed by an instrument. */
+  .axis text{fill:var(--muted);font:400 12.5px var(--serif)}
+  .axis .ttl{fill:var(--muted);font:italic 400 12px var(--serif);letter-spacing:.02em;text-transform:none}
   .axis .dec{fill:var(--ink);font:400 16px var(--serif);letter-spacing:-.01em}
-  .axis .decn{fill:var(--faint);font:400 9.5px var(--mono);letter-spacing:.12em;text-transform:uppercase}
-  .axis .ysm text{font-size:9.5px}
+  .axis .decn{fill:var(--faint);font:italic 400 11px var(--serif);letter-spacing:.02em;text-transform:none}
+  .axis .ysm text{font-size:10.5px}
   .bar{cursor:crosshair}
   .bar.hi .hit{fill:var(--ink);fill-opacity:.055;stroke:var(--ink);stroke-opacity:.34}
   .bar.hi line{stroke-width:2}
@@ -212,11 +223,10 @@
   .capwrap{margin:0}
   .capbox{margin:0}
   #cap{display:block;width:100%;height:auto}
-  #cap .axis text{fill:var(--muted);font:400 11px var(--mono);font-variant-numeric:tabular-nums}
+  #cap .axis text{fill:var(--muted);font:400 12px var(--serif)}
 
   @media (max-width:820px){
     .wrap{padding:26px 16px 56px 18px}
-    h1{font-size:33px;max-width:none}
     .masthead{display:block}
     .dateline{text-align:left;padding:11px 0 0}
     .deck,.standfirst{font-size:16.5px}
@@ -274,7 +284,10 @@
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
 
   /* The drawn graphic. One SVG, redrawn each frame from the reactor records. */
-  #sky{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #sky{position:absolute;inset:0;width:100%;height:100%;display:block;
+    /* a hairline of shadow under every stroke lifts the drawing off the
+       photograph without brightening it */
+    filter:drop-shadow(0 1px 2px rgba(4,6,9,.85))}
 
   /* Legibility scrim. The bars are allowed to run *behind* the copy but never
      through it: an ellipse anchored bottom-left lifts the text column out of
@@ -286,7 +299,11 @@
         rgba(10,12,15,.97) 0%, rgba(10,12,15,.93) 30%,
         rgba(10,12,15,.62) 56%, rgba(10,12,15,.18) 74%, rgba(10,12,15,0) 86%),
       linear-gradient(to top,
-        rgba(10,12,15,.72) 0%, rgba(10,12,15,.34) 16%, rgba(10,12,15,0) 34%)}
+        rgba(10,12,15,.72) 0%, rgba(10,12,15,.34) 16%, rgba(10,12,15,0) 34%),
+      /* a quiet wash across the top of the frame, where the drawn graphic and
+         the photograph cards live, so the data reads against the photo */
+      linear-gradient(to bottom,
+        rgba(10,12,15,.52) 0%, rgba(10,12,15,.30) 26%, rgba(10,12,15,0) 52%)}
 
   /* Copy. Sits in the lower third so the graphic owns the optical centre. */
   .beats{position:absolute;inset:0;pointer-events:none}
@@ -470,7 +487,7 @@
 
       <div class="beat-copy b3" id="c3">
         <p class="yr">1971</p>
-        <p class="say">Loss of Cooling Accident occurs at the Three Mile Island Nuclear Generating Station near Harrisburg, Pennsylvania. Although it had no detectable health effects on plant workers or the public it effectively halted new reactor development in the United States for the next 50 years.</p>
+        <p class="say">Loss of Coolant Accident occurs at the Three Mile Island Nuclear Generating Station near Harrisburg, Pennsylvania. Although it had no detectable health effects on plant workers or the public, it effectively halted new reactor development in the United States for the next 50 years.</p>
       </div>
 
       <div class="beat-copy b4" id="c4">
@@ -491,7 +508,7 @@
 <div class="wrap" id="figure">
 <header>
   <div class="masthead">
-    <h1>American Nuclear Renaissance</h1>
+    <h1>We are now entering the American Nuclear Renaissance.</h1>
   </div>
 </header>
 
@@ -1287,7 +1304,7 @@ var svg = document.getElementById("chart");
 var tip = document.getElementById("tip");
 var zread = document.getElementById("zread");
 var M = {t:18, r:22, b:46, l:64};
-var LW = 0.9, R0 = 2.15, R1 = 2.45;
+var LW = 0.9, R0 = 1.85, R1 = 2.2;
 var HITS = [], PLOT = {t:0,b:0,l:0,r:0}, hot = null;
 
 function visible(){
@@ -1363,12 +1380,15 @@ function drawOne(){
   s.push('<text class="ttl" transform="translate(14,'+(M.t+ih/2)+') rotate(-90)" text-anchor="middle">Net capacity &middot; MW</text>');
 
   // x axis
+  /* Years are marked with short ticks under the baseline rather than rules
+     through the plot: with two hundred lines in the frame, full-height
+     gridlines were one lattice too many. */
   var yrsT = ticksX(a,b,w);
   yrsT.forEach(function(y){
     var px = X(new Date(y+"-01-01"));
     if(px<M.l-1||px>M.l+iw+1) return;
-    s.push('<line x1="'+px.toFixed(1)+'" y1="'+M.t+'" x2="'+px.toFixed(1)+'" y2="'+(M.t+ih)+'" stroke="#ece6d8"/>');
-    s.push('<text x="'+px.toFixed(1)+'" y="'+(M.t+ih+20)+'" text-anchor="middle">'+y+'</text>');
+    s.push('<line x1="'+px.toFixed(1)+'" y1="'+(M.t+ih)+'" x2="'+px.toFixed(1)+'" y2="'+(M.t+ih+6)+'" stroke="#b5ad9c"/>');
+    s.push('<text x="'+px.toFixed(1)+'" y="'+(M.t+ih+22)+'" text-anchor="middle">'+y+'</text>');
   });
   s.push('<line x1="'+M.l+'" y1="'+(M.t+ih)+'" x2="'+(M.l+iw)+'" y2="'+(M.t+ih)+'" stroke="#514c42" stroke-width="1"/>');
   s.push('<text class="ttl" x="'+(M.l+iw/2)+'" y="'+(h-5)+'" text-anchor="middle">Year</text>');
@@ -1378,7 +1398,7 @@ function drawOne(){
   var tx = X(TODAY);
   if(tx>=M.l && tx<=M.l+iw){
     s.push('<line x1="'+tx.toFixed(1)+'" y1="'+M.t+'" x2="'+tx.toFixed(1)+'" y2="'+(M.t+ih)+'" stroke="#a49b88" stroke-width="1" stroke-dasharray="2 4"/>');
-    s.push('<text x="'+(tx+6).toFixed(1)+'" y="'+(M.t+10)+'" fill="#9b9384" font-family="ui-monospace,&quot;SF Mono&quot;,Menlo,&quot;Cascadia Mono&quot;,&quot;Roboto Mono&quot;,monospace" font-size="9.5" letter-spacing="1.2">TODAY</text>');
+    s.push('<text x="'+(tx+6).toFixed(1)+'" y="'+(M.t+11)+'" fill="#9b9384" font-family="Iowan Old Style,Palatino Linotype,Palatino,Georgia,serif" font-style="italic" font-size="12">Today</text>');
   }
 
   s.push('<g id="bars">');
@@ -1528,7 +1548,7 @@ function emitBars(vis, X, Y, LO, HI, s, opt){
     } else if(d.cat==="planned"){
       if(wd>0.4) s.push('<line x1="'+cx1.toFixed(1)+'" y1="'+Y1+'" x2="'+cx2.toFixed(1)+'" y2="'+Y1+'" stroke="'+col+'" stroke-width="'+LW+'" stroke-opacity=".5" stroke-dasharray=".9 2.4"/>');
     } else if(wd>0.4){
-      s.push('<line x1="'+cx1.toFixed(1)+'" y1="'+Y1+'" x2="'+cx2.toFixed(1)+'" y2="'+Y1+'" stroke="'+col+'" stroke-width="'+LW+'" stroke-opacity="'+(d.cat==="noncomm"?".8":".92")+'"'+dash+'/>');
+      s.push('<line x1="'+cx1.toFixed(1)+'" y1="'+Y1+'" x2="'+cx2.toFixed(1)+'" y2="'+Y1+'" stroke="'+col+'" stroke-width="'+LW+'" stroke-opacity="'+(d.cat==="noncomm"?".62":".74")+'"'+dash+'/>');
     }
 
     // start marker
@@ -1746,7 +1766,7 @@ function drawDecades(){
     var tx = X(+TODAY);
     if(tx>=M.l && tx<=M.l+pw){
       s.push('<line x1="'+tx.toFixed(1)+'" y1="'+y0+'" x2="'+tx.toFixed(1)+'" y2="'+y1+'" stroke="#a49b88" stroke-width="1" stroke-dasharray="2 4"/>');
-      s.push('<text x="'+(tx+5).toFixed(1)+'" y="'+(y0+10)+'" fill="#9b9384" font-family="ui-monospace,&quot;SF Mono&quot;,Menlo,&quot;Cascadia Mono&quot;,&quot;Roboto Mono&quot;,monospace" font-size="9" letter-spacing="1.1">TODAY</text>');
+      s.push('<text x="'+(tx+5).toFixed(1)+'" y="'+(y0+11)+'" fill="#9b9384" font-family="Iowan Old Style,Palatino Linotype,Palatino,Georgia,serif" font-style="italic" font-size="11.5">Today</text>');
     }
 
     s.push('</g>');
@@ -2181,16 +2201,19 @@ function drawCap(){
 
   // Only annotate the present when the present is on screen; a "97 GW today"
   // caption floating over a window that ends in 2005 would be nonsense.
+  /* The reading sits to the left of the today rule so it can never collide
+     with the inline key at the panel's right edge. */
+  var SERIF = 'Iowan Old Style,Palatino Linotype,Palatino,Georgia,serif';
   if(shown)
-    s.push('<text x="'+(tx+7).toFixed(1)+'" y="'+(Y(now)-7).toFixed(1)+'" fill="#2f6d96" font-family="'+MONO+'" font-size="10.5">'+(now/1000).toFixed(1)+' GW today</text>');
+    s.push('<text x="'+(tx-8).toFixed(1)+'" y="'+(Y(now)-7).toFixed(1)+'" text-anchor="end" fill="#2f6d96" font-family="'+SERIF+'" font-style="italic" font-size="12.5">'+(now/1000).toFixed(1)+' GW today</text>');
 
   // A two-word key, set inline at the right, so the dashed line reads without a
   // paragraph of explanation underneath the figure.
-  s.push('<g font-family="'+MONO+'" font-size="9" letter-spacing="1.1" fill="#9b9384">');
+  s.push('<g font-family="'+SERIF+'" font-style="italic" font-size="11" fill="#9b9384">');
   s.push('<line x1="'+(m.l+iw-118)+'" y1="'+(m.t+5)+'" x2="'+(m.l+iw-104)+'" y2="'+(m.t+5)+'" stroke="#2f6d96" stroke-width="1.9"/>');
-  s.push('<text x="'+(m.l+iw-99)+'" y="'+(m.t+8.4)+'">ON THE GRID</text>');
-  s.push('<line x1="'+(m.l+iw-118)+'" y1="'+(m.t+18)+'" x2="'+(m.l+iw-104)+'" y2="'+(m.t+18)+'" stroke="#2f6d96" stroke-width="1.35" stroke-opacity=".45" stroke-dasharray="2.6 2.6"/>');
-  s.push('<text x="'+(m.l+iw-99)+'" y="'+(m.t+21.4)+'">+ PLANNED</text>');
+  s.push('<text x="'+(m.l+iw-99)+'" y="'+(m.t+8.8)+'">on the grid</text>');
+  s.push('<line x1="'+(m.l+iw-118)+'" y1="'+(m.t+19)+'" x2="'+(m.l+iw-104)+'" y2="'+(m.t+19)+'" stroke="#2f6d96" stroke-width="1.35" stroke-opacity=".45" stroke-dasharray="2.6 2.6"/>');
+  s.push('<text x="'+(m.l+iw-99)+'" y="'+(m.t+22.8)+'">+ planned</text>');
   s.push('</g>');
 
   capSvg.setAttribute("viewBox", "0 0 "+w+" "+h);
@@ -2425,7 +2448,7 @@ window.addEventListener("resize", function(){
     SFR:"#eb8b4e", SGR:"#3fb0aa", PHWR:"#9dc45c", OCR:"#b79279", MSR:"#d96aa8",
     Other:"#a49c8d"
   };
-  var CRIT = "#e8290f", VOLT = "#e0aa22", INK = "#f4efe4", FAINT = "#4a5158";
+  var CRIT = "#e8290f", VOLT = "#e0aa22", INK = "#f4efe4", FAINT = "#6b747e";
 
   /* ---- time helpers: fractional years, so the camera can sit between them -- */
   function yfrac(d){
@@ -2623,10 +2646,10 @@ window.addEventListener("resize", function(){
          that they are simply reactors under construction, which is what they
          were at the time. */
       var col = (ab && done && cur.dim > 0.02) ? CRIT : r.col;
-      var op  = (ab && done && cur.dim > 0.02) ? (0.5 + 0.45*cur.dim) : 0.82;
+      var op  = (ab && done && cur.dim > 0.02) ? (0.55 + 0.45*cur.dim) : 0.95;
       s.push('<line x1="'+xa.toFixed(1)+'" y1="'+yb.toFixed(1)+'" x2="'+xb.toFixed(1)+
              '" y2="'+yb.toFixed(1)+'" stroke="'+col+'" stroke-opacity="'+op.toFixed(2)+
-             '" stroke-width="1.5"'+(ab && done ? ' stroke-dasharray="3 2.4"' : '')+'/>');
+             '" stroke-width="1.8"'+(ab && done ? ' stroke-dasharray="3 2.4"' : '')+'/>');
       s.push('<circle cx="'+xa.toFixed(1)+'" cy="'+yb.toFixed(1)+'" r="1.9" fill="'+col+
              '" fill-opacity="'+op.toFixed(2)+'"/>');
       if(done){
