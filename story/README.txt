@@ -9,7 +9,9 @@ behind each beat's text. They come from the author's source document:
   beat1.jpg   Chicago Pile-1, cutaway drawing by Melvin A. Miller, 1946.
   beat2.jpg   Single-containment PWR on a river at low sun (1960s-70s buildout).
   beat3.jpg   Three Mile Island from the air, cooling towers plumed.
-  beat4.jpg   Valar Atomics Ward facility (present-day advanced reactor site).
+  beat4.jpg   President Trump at the May 23, 2025 signing of the nuclear
+              executive orders in the Oval Office. Frame from the official
+              White House video (US government work, public domain).
 
 The plates are still optional at runtime: if none load, the engine adds a
 `.no-plates` class and the sequence reads on the data graphic and type alone.
@@ -39,3 +41,14 @@ see each article's file page for exact license):
   shoreham.jpg      Shoreham Nuclear Power Plant
   wattsbar.jpg      Watts Bar Nuclear Plant
   vogtle.jpg        Vogtle Electric Generating Plant
+
+Renaissance section
+-------------------
+  renaissance.jpg   Ward 250 reactor vessel being rigged for lifting in front
+                    of an American flag (author-supplied photograph).
+  valar.jpg         Valar Atomics Ward facility, wide banner.
+  crit/antares.jpg  Antares Mark-0 core assembly (via mobilityengineeringtech.com).
+  crit/unity.jpg    Deployable Energy Unity vessel (via powermag.com).
+  crit/aalox.jpg    Aalo Atomics critical test reactor (via world-nuclear-news.org).
+  crit/groves.jpg   Oklo Isotopes Groves facility, Lockhart TX (via powermag.com,
+                    cropped to remove watermark).

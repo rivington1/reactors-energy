@@ -7,20 +7,22 @@
 <meta name="description" content="An interactive chart of construction start and end dates for every nuclear power reactor built, abandoned, or currently under construction in the United States.">
 <style>
   :root{
-    --paper:#f6f3ec; --paper-2:#efebe1; --ink:#232019; --ink-2:#514c42;
-    --muted:#777063; --faint:#9b9384; --rule:#ddd7c8; --rule-2:#e9e4d8;
-    --pwr:#2f6d96; --bwr:#c17d2b; --htgr:#7a5aa2; --gcr:#4d8071;
-    --fbr:#b23f3f; --sfr:#d1602a; --sgr:#1f7f7a; --phwr:#6f8f3a;
-    --ocr:#8a6a55; --msr:#a8477e; --other:#837c70;
+    /* The whole page now shares the scroll story's night palette: the figure
+       and map sit on the same dark ground the photographs do. */
+    --paper:#0b0d11; --paper-2:#12151b; --ink:#f4efe4; --ink-2:#c3bcac;
+    --muted:#8a8375; --faint:#6d675a; --rule:#262b33; --rule-2:#1c2027;
+    --pwr:#5aa3d0; --bwr:#dba24f; --htgr:#a98cd4; --gcr:#6fae9b;
+    --fbr:#e06a6a; --sfr:#eb8b4e; --sgr:#3fb0aa; --phwr:#9dc45c;
+    --ocr:#b79279; --msr:#d96aa8; --other:#a49c8d;
     /* Licence families — a separate, deliberately unrelated palette */
-    --l-p50ol:#1f5f86; --l-p50cp:#c98a2e; --l-p52:#2f7d5e;
-    --l-doe:#8a4b9c; --l-mil:#6d6a5c; --l-none:#b0a897;
+    --l-p50ol:#5a9fd0; --l-p50cp:#d9a44e; --l-p52:#5cb890;
+    --l-doe:#b285c9; --l-mil:#9a9788; --l-none:#7a7365;
     /* Criticality — reserved, used nowhere else */
-    --crit:#d81e05;
+    --crit:#ff3b1d;
     /* Electricity generated — reserved, used nowhere else */
-    --volt:#c9971a;
+    --volt:#e8b62b;
     /* Map status palette */
-    --s-op:#2f7d5e; --s-off:#9b9384; --s-unf:#b23f3f; --s-bld:#2f6d96; --s-pln:#7a5aa2;
+    --s-op:#4fae83; --s-off:#8f8878; --s-unf:#e06060; --s-bld:#5aa3d0; --s-pln:#a98cd4;
     /* Type stacks are built only from faces that actually ship on the machines
        people read this on. No webfont request, no invisible-text flash, and
        nothing falls back to Arial/Times/Courier New. */
@@ -65,6 +67,34 @@
      no default template produces. */
   .rule.thick{height:0;border-top:2.5px solid var(--ink);border-bottom:1px solid var(--ink);
     padding-top:3px;background:none;margin:22px 0 0}
+  /* A short centred bar in muted red, white and blue — the one overtly
+     patriotic mark on the page, kept small so it reads as a grace note. */
+  .rule.tricolor{height:2px;border:none;padding:0;margin:4.5vh auto 0;
+    max-width:min(520px,68vw);
+    background:linear-gradient(90deg,#a03a36 0 33.4%,#ddd6c6 33.4% 66.7%,#3d6394 66.7% 100%)}
+
+  /* The Renaissance section: full-width statement between story and figure. */
+  #renaissance{background:var(--paper);color:var(--ink);padding:13vh 0 11vh;overflow:hidden}
+  .ren-hero{margin:7vh auto 0;max-width:1160px;padding:0 26px}
+  .ren-hero img{width:100%;display:block;border:1px solid var(--rule)}
+  .ren-line{font:clamp(19px,2.3vw,29px)/1.45 var(--serif);color:var(--ink);text-align:center;
+    max-width:46ch;margin:8vh auto 5vh;padding:0 26px}
+  .ren-banner{max-width:1160px;margin:0 auto;padding:0 26px}
+  .ren-banner img{width:100%;height:clamp(230px,30vw,420px);object-fit:cover;display:block;
+    border:1px solid var(--rule)}
+  .ren-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;
+    max-width:1160px;margin:16px auto 0;padding:0 26px}
+  .ren-row figure{margin:0}
+  .ren-row img{width:100%;height:clamp(96px,10.5vw,150px);object-fit:cover;display:block;
+    border:1px solid var(--rule);filter:saturate(.9)}
+  @media (max-width:700px){
+    .ren-row{grid-template-columns:repeat(2,1fr);gap:10px}
+    .ren-row img{height:110px}
+  }
+
+  /* The figure's own heading, now that the page headline lives above. */
+  .figtitle{font:400 clamp(22px,2.6vw,40px)/1.15 var(--display);letter-spacing:-.018em;
+    margin:0;text-align:center}
 
   /* Controls. Each group stacks its labels one above the next, the way a printed
      map legend sets its keys. The groups themselves flow through newspaper
@@ -125,9 +155,9 @@
 
   /* Card is placed beside the line it describes, never over it — see place(). */
   #tip{position:absolute;pointer-events:none;opacity:0;
-    background:#fffdf8;border:1px solid var(--ink);padding:11px 13px 12px;
+    background:#12151b;border:1px solid var(--ink);padding:11px 13px 12px;
     font:13px/1.45 var(--sans);width:max-content;max-width:360px;z-index:9;
-    box-shadow:3px 3px 0 rgba(35,32,25,.08);transition:opacity .08s}
+    box-shadow:0 10px 30px rgba(0,0,0,.55);transition:opacity .08s}
   #tip .t{font:400 20px/1.13 var(--display);letter-spacing:-.015em;margin-bottom:1px}
   #tip .t2{font:400 15px/1.24 var(--serif);font-style:italic;color:var(--ink-2);margin-bottom:3px}
   #tip .m{color:var(--muted);font-size:12.5px}
@@ -162,7 +192,7 @@
     position:relative;overflow:hidden}
   .ph:first-child{margin-top:-11px}
   .ph img{display:block;width:100%;height:132px;object-fit:cover;background:#e7e2d6}
-  .ph .cr{position:absolute;right:0;bottom:0;background:rgba(35,32,25,.72);color:#f6f3ec;
+  .ph .cr{position:absolute;right:0;bottom:0;background:rgba(6,8,10,.72);color:#f4efe4;
     font:400 8.5px var(--mono);letter-spacing:.05em;padding:2px 5px 3px;text-transform:uppercase}
   .ph.none{height:0;border:0;margin:0}
   .ph .ld{height:132px;display:flex;align-items:center;justify-content:center;
@@ -174,14 +204,14 @@
   .mapwrap .deck{font-size:16.5px;margin-bottom:2px}
   .mapbox{position:relative;margin-top:6px}
   #map{display:block;width:100%;height:auto}
-  #map .land{fill:#eae5d9;stroke:none}
-  #map .mesh{fill:none;stroke:#d6cfbe;stroke-width:.8;stroke-linejoin:round}
+  #map .land{fill:#171b21;stroke:none}
+  #map .mesh{fill:none;stroke:#2a3039;stroke-width:.8;stroke-linejoin:round}
   #map .site{cursor:crosshair}
   #map .site.hi circle.pin{stroke:var(--ink);stroke-width:1.3}
   #mtip{position:absolute;pointer-events:none;opacity:0;
-    background:#fffdf8;border:1px solid var(--ink);padding:11px 13px 12px;
+    background:#12151b;border:1px solid var(--ink);padding:11px 13px 12px;
     font:13px/1.45 var(--sans);width:max-content;max-width:360px;z-index:9;
-    box-shadow:3px 3px 0 rgba(35,32,25,.08);transition:opacity .08s}
+    box-shadow:0 10px 30px rgba(0,0,0,.55);transition:opacity .08s}
   #mtip .t{font:400 20px/1.13 var(--display);letter-spacing:-.015em;margin-bottom:1px}
   #mtip .t2{font:400 15px/1.24 var(--serif);font-style:italic;color:var(--ink-2);margin-bottom:3px}
   #mtip .m{color:var(--muted);font-size:12.5px}
@@ -366,9 +396,10 @@
 
   /* Handoff. The dark lifts to paper across this band and the stage fades,
      so the story ends by turning into the figure rather than stopping. */
-  #story-out{height:48vh;position:relative;
-    background:linear-gradient(to bottom,var(--night) 0%,#22242a 18%,#4a4740 42%,
-      #918b7b 68%,#ddd8ca 88%,var(--paper) 100%)}
+  /* The page below is dark now, so the handoff is a short breath of night
+     rather than a lift to paper. */
+  #story-out{height:32vh;position:relative;
+    background:linear-gradient(to bottom,var(--night) 0%,var(--paper) 100%)}
   #story-out .cue{position:absolute;left:0;right:0;top:52%;text-align:center;
     opacity:0;transition:opacity .45s ease}
   #story-out .cue.on{opacity:1}
@@ -492,7 +523,7 @@
 
       <div class="beat-copy b4" id="c4">
         <p class="yr range">Today</p>
-        <p class="say">Executive orders lead to the development of a new golden age of nuclear energy in America, which has led to 5 Advanced Reactors going critical.</p>
+        <p class="say">Executive orders create conditions for a new era of American reactor development.</p>
       </div>
     </div>
 
@@ -502,14 +533,34 @@
   <div class="beat"></div><div class="beat"></div><div class="beat"></div><div class="beat"></div>
 
   <div id="story-out">
-    <div class="cue" id="cue"><b>Two hundred and thirty reactors</b>Built, abandoned, or under construction</div>
+    <div class="cue" id="cue"></div>
   </div>
 </section>
+
+<!-- ==========================================================================
+     The Renaissance. The story hands off to a full-width statement: the
+     headline, the vessel photograph, the count, and the five machines —
+     the one making electricity as a banner, the other four beneath it.
+     ====================================================================== -->
+<section id="renaissance" aria-label="We are now entering the American Nuclear Renaissance">
+  <h1>We are now entering the American Nuclear Renaissance.</h1>
+  <div class="rule tricolor"></div>
+  <figure class="ren-hero">
+    <img src="story/renaissance.jpg" alt="Workers rig a reactor vessel for lifting in front of an American flag">
+  </figure>
+  <p class="ren-line">To date, 5 reactors have now achieved criticality, with one delivering electricity.</p>
+  <figure class="ren-banner"><img src="story/valar.jpg" alt="The Ward facility in the Utah desert"></figure>
+  <div class="ren-row">
+    <figure><img src="story/crit/antares.jpg" alt="A reactor core being assembled"></figure>
+    <figure><img src="story/crit/unity.jpg" alt="A microreactor vessel in its test cell"></figure>
+    <figure><img src="story/crit/aalox.jpg" alt="A test reactor vessel with its core exposed"></figure>
+    <figure><img src="story/crit/groves.jpg" alt="An isotope test reactor facility"></figure>
+  </div>
+</section>
+
 <div class="wrap" id="figure">
 <header>
-  <div class="masthead">
-    <h1>We are now entering the American Nuclear Renaissance.</h1>
-  </div>
+  <h2 class="figtitle">Explore the history of reactor development in the United States</h2>
 </header>
 
 <div class="rule thick"></div>
@@ -588,20 +639,18 @@
 <div class="legend">
   <h2>Key</h2>
   <div class="keyrow">
-    <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="38" y2="6" stroke="#2f6d96" stroke-width="1.1"></line><circle cx="2.4" cy="6" r="2.2" fill="#2f6d96"></circle><circle cx="38" cy="6" r="2.5" fill="#2f6d96"></circle></svg> Completed and operated commercially</div>
-    <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="38" y2="6" stroke="#2f6d96" stroke-width="1.1" stroke-opacity=".8"></line><circle cx="2.4" cy="6" r="2.2" fill="#2f6d96"></circle><circle cx="38" cy="6" r="2.5" fill="#f6f3ec" stroke="#2f6d96" stroke-width=".9"></circle></svg> Completed but never commercial <i>hollow end</i></div>
-    <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="33" y2="6" stroke="#2f6d96" stroke-width="1.1" stroke-dasharray="3 2.2"></line><circle cx="2.4" cy="6" r="2.2" fill="#2f6d96"></circle><path d="M35.6 3.4 L40.4 8.6 M40.4 3.4 L35.6 8.6" stroke="#2f6d96" stroke-width="1.1" fill="none"></path></svg> Started, never finished <i>dashed, &#10005;</i></div>
-    <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="19" y2="6" stroke="#2f6d96" stroke-width="1.1"></line><line x1="19" y1="6" x2="35" y2="6" stroke="#2f6d96" stroke-width="1.1" stroke-dasharray="1.4 2.1"></line><circle cx="2.4" cy="6" r="2.2" fill="#2f6d96"></circle><path d="M40.4 6 L38 3.4 L35.6 6 L38 8.6 Z" fill="#f6f3ec" stroke="#2f6d96" stroke-width=".9"></path></svg> Being built now <i>dotted = projected</i></div>
-    <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="33" y2="6" stroke="#2f6d96" stroke-width="1" stroke-opacity=".45" stroke-dasharray=".9 2.4"></line><circle cx="2.4" cy="6" r="2" fill="#f6f3ec" stroke="#2f6d96" stroke-width=".9" stroke-opacity=".6"></circle><rect x="34.2" y="3.8" width="4.4" height="4.4" fill="#f6f3ec" stroke="#2f6d96" stroke-width=".9" stroke-opacity=".6"></rect></svg> Designed only, nothing built <i>faint dots, hollow</i></div>
-    <div><svg width="46" height="14" viewBox="0 0 46 14"><line x1="2.4" y1="7" x2="33" y2="7" stroke="#2f6d96" stroke-width="1.1"></line><circle cx="2.4" cy="7" r="2.2" fill="#2f6d96"></circle><circle cx="33" cy="7" r="2.5" fill="#2f6d96"></circle><circle cx="33" cy="7" r="5.4" fill="none" stroke="#d81e05" stroke-width="1.35"></circle></svg> Achieved criticality <i>red ring</i></div>
-    <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="26" y2="6" stroke="#2f6d96" stroke-width="1.1"></line><circle cx="2.4" cy="6" r="2.2" fill="#2f6d96"></circle><circle cx="26" cy="6" r="2.5" fill="#2f6d96"></circle><path d="M35.4 1.3 L31.1 6.6 L33.7 6.6 L32.5 10.7 L36.8 5.4 L34.2 5.4 Z" fill="#c9971a" stroke="#231f14" stroke-width=".5" stroke-linejoin="round"></path></svg> Has generated electricity <i>bolt</i></div>
+    <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="38" y2="6" stroke="#5aa3d0" stroke-width="1.1"></line><circle cx="2.4" cy="6" r="2.2" fill="#5aa3d0"></circle><circle cx="38" cy="6" r="2.5" fill="#5aa3d0"></circle></svg> Completed and operated commercially</div>
+    <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="38" y2="6" stroke="#5aa3d0" stroke-width="1.1" stroke-opacity=".8"></line><circle cx="2.4" cy="6" r="2.2" fill="#5aa3d0"></circle><circle cx="38" cy="6" r="2.5" fill="#0b0d11" stroke="#5aa3d0" stroke-width=".9"></circle></svg> Completed but never commercial <i>hollow end</i></div>
+    <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="33" y2="6" stroke="#5aa3d0" stroke-width="1.1" stroke-dasharray="3 2.2"></line><circle cx="2.4" cy="6" r="2.2" fill="#5aa3d0"></circle><path d="M35.6 3.4 L40.4 8.6 M40.4 3.4 L35.6 8.6" stroke="#5aa3d0" stroke-width="1.1" fill="none"></path></svg> Started, never finished <i>dashed, &#10005;</i></div>
+    <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="19" y2="6" stroke="#5aa3d0" stroke-width="1.1"></line><line x1="19" y1="6" x2="35" y2="6" stroke="#5aa3d0" stroke-width="1.1" stroke-dasharray="1.4 2.1"></line><circle cx="2.4" cy="6" r="2.2" fill="#5aa3d0"></circle><path d="M40.4 6 L38 3.4 L35.6 6 L38 8.6 Z" fill="#0b0d11" stroke="#5aa3d0" stroke-width=".9"></path></svg> Being built now <i>dotted = projected</i></div>
+    <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="33" y2="6" stroke="#5aa3d0" stroke-width="1" stroke-opacity=".45" stroke-dasharray=".9 2.4"></line><circle cx="2.4" cy="6" r="2" fill="#0b0d11" stroke="#5aa3d0" stroke-width=".9" stroke-opacity=".6"></circle><rect x="34.2" y="3.8" width="4.4" height="4.4" fill="#0b0d11" stroke="#5aa3d0" stroke-width=".9" stroke-opacity=".6"></rect></svg> Designed only, nothing built <i>faint dots, hollow</i></div>
+    <div><svg width="46" height="14" viewBox="0 0 46 14"><line x1="2.4" y1="7" x2="33" y2="7" stroke="#5aa3d0" stroke-width="1.1"></line><circle cx="2.4" cy="7" r="2.2" fill="#5aa3d0"></circle><circle cx="33" cy="7" r="2.5" fill="#5aa3d0"></circle><circle cx="33" cy="7" r="5.4" fill="none" stroke="#d81e05" stroke-width="1.35"></circle></svg> Achieved criticality <i>red ring</i></div>
+    <div><svg width="46" height="12" viewBox="0 0 46 12"><line x1="2.4" y1="6" x2="26" y2="6" stroke="#5aa3d0" stroke-width="1.1"></line><circle cx="2.4" cy="6" r="2.2" fill="#5aa3d0"></circle><circle cx="26" cy="6" r="2.5" fill="#5aa3d0"></circle><path d="M35.4 1.3 L31.1 6.6 L33.7 6.6 L32.5 10.7 L36.8 5.4 L34.2 5.4 Z" fill="#c9971a" stroke="#231f14" stroke-width=".5" stroke-linejoin="round"></path></svg> Has generated electricity <i>bolt</i></div>
   </div>
 </div>
 
 <div class="mapwrap">
-  <p class="kicker">Where they are &middot; and where they were going to be</p>
-  <h2>Every American reactor site, built or not</h2>
-  <p class="deck">The same reactors, placed on the ground. Sites are coloured by what happened to them: still running, shut down, half built and abandoned, under construction today, or designed and licensed but never begun. Circle size is net capacity. <em>Hover any site for every reactor on it.</em></p>
+  <h2>Our nation&rsquo;s reactors, mapped</h2>
 
   <div class="controls" style="margin-top:20px;border-top:1px solid var(--rule);columns:2 206px">
     <div class="cgroup">
@@ -619,7 +668,6 @@
     <div id="mtip"></div>
   </div>
 
-  <p class="mapfoot">One circle per site, not per reactor. Three reactors here sit outside any map of the United States and are not plotted: the Army&rsquo;s PM&#8209;2A at Camp Century in Greenland, the barge&#8209;mounted MH&#8209;1A in the Panama Canal Zone, and PM&#8209;3A at McMurdo Station in Antarctica.</p>
 </div>
 </div>
 
@@ -1045,7 +1093,7 @@ Object.keys(CAT).forEach(function(c){
 });
 
 function catSwatch(c){
-  var k = "#514c42", p = "#f6f3ec", o = "<svg class='sw' viewBox='0 0 26 11'>";
+  var k = "#77818c", p = "#0b0d11", o = "<svg class='sw' viewBox='0 0 26 11'>";
   var ln = "<line x1='2.2' y1='5.5' x2='%X%' y2='5.5' stroke='"+k+"' stroke-width='1.1'";
   if(c==="comm")
     return o + ln.replace("%X%","20.8") + "/><circle cx='2.2' cy='5.5' r='2.2' fill='"+k+"'/>"
@@ -1371,7 +1419,7 @@ function drawOne(){
   s.push('<g class="grid">');
   var mws = ticksY(v0, v1, sq);
   mws.forEach(function(m){
-    s.push('<line x1="'+M.l+'" y1="'+Y(m).toFixed(1)+'" x2="'+(M.l+iw)+'" y2="'+Y(m).toFixed(1)+'" stroke="'+(m===0?"#cfc8b7":"#e6e0d1")+'" stroke-width="1"/>');
+    s.push('<line x1="'+M.l+'" y1="'+Y(m).toFixed(1)+'" x2="'+(M.l+iw)+'" y2="'+Y(m).toFixed(1)+'" stroke="'+(m===0?"#3d4450":"#232830")+'" stroke-width="1"/>');
   });
   s.push('</g><g class="axis">');
   mws.forEach(function(m){
@@ -1387,24 +1435,24 @@ function drawOne(){
   yrsT.forEach(function(y){
     var px = X(new Date(y+"-01-01"));
     if(px<M.l-1||px>M.l+iw+1) return;
-    s.push('<line x1="'+px.toFixed(1)+'" y1="'+(M.t+ih)+'" x2="'+px.toFixed(1)+'" y2="'+(M.t+ih+6)+'" stroke="#b5ad9c"/>');
+    s.push('<line x1="'+px.toFixed(1)+'" y1="'+(M.t+ih)+'" x2="'+px.toFixed(1)+'" y2="'+(M.t+ih+6)+'" stroke="#5f6873"/>');
     s.push('<text x="'+px.toFixed(1)+'" y="'+(M.t+ih+22)+'" text-anchor="middle">'+y+'</text>');
   });
-  s.push('<line x1="'+M.l+'" y1="'+(M.t+ih)+'" x2="'+(M.l+iw)+'" y2="'+(M.t+ih)+'" stroke="#514c42" stroke-width="1"/>');
+  s.push('<line x1="'+M.l+'" y1="'+(M.t+ih)+'" x2="'+(M.l+iw)+'" y2="'+(M.t+ih)+'" stroke="#77818c" stroke-width="1"/>');
   s.push('<text class="ttl" x="'+(M.l+iw/2)+'" y="'+(h-5)+'" text-anchor="middle">Year</text>');
   s.push('</g>');
 
   // today line
   var tx = X(TODAY);
   if(tx>=M.l && tx<=M.l+iw){
-    s.push('<line x1="'+tx.toFixed(1)+'" y1="'+M.t+'" x2="'+tx.toFixed(1)+'" y2="'+(M.t+ih)+'" stroke="#a49b88" stroke-width="1" stroke-dasharray="2 4"/>');
-    s.push('<text x="'+(tx+6).toFixed(1)+'" y="'+(M.t+11)+'" fill="#9b9384" font-family="Iowan Old Style,Palatino Linotype,Palatino,Georgia,serif" font-style="italic" font-size="12">Today</text>');
+    s.push('<line x1="'+tx.toFixed(1)+'" y1="'+M.t+'" x2="'+tx.toFixed(1)+'" y2="'+(M.t+ih)+'" stroke="#7d8791" stroke-width="1" stroke-dasharray="2 4"/>');
+    s.push('<text x="'+(tx+6).toFixed(1)+'" y="'+(M.t+11)+'" fill="#939ba5" font-family="Iowan Old Style,Palatino Linotype,Palatino,Georgia,serif" font-style="italic" font-size="12">Today</text>');
   }
 
   s.push('<g id="bars">');
   emitBars(vis, X, Y, LO, HI, s);
   s.push('</g>');
-  s.push('<rect id="sel" x="0" y="'+M.t+'" width="0" height="'+ih+'" fill="#232019" fill-opacity=".07" stroke="#232019" stroke-opacity=".35" style="display:none" pointer-events="none"/>');
+  s.push('<rect id="sel" x="0" y="'+M.t+'" width="0" height="'+ih+'" fill="#dfe5ec" fill-opacity=".06" stroke="#dfe5ec" stroke-opacity=".35" style="display:none" pointer-events="none"/>');
 
   svg.setAttribute("viewBox", "0 0 "+w+" "+h);
   svg.setAttribute("width", w);
@@ -1726,7 +1774,7 @@ function drawDecades(){
     var ticks = mws.filter(function(m){ return Y(m) >= y0 - 0.5; });
     s.push('<g class="grid">');
     ticks.forEach(function(m){
-      s.push('<line x1="'+M.l+'" y1="'+Y(m).toFixed(1)+'" x2="'+(M.l+pw)+'" y2="'+Y(m).toFixed(1)+'" stroke="'+(m===0?"#cfc8b7":"#eee9dd")+'" stroke-width="1"/>');
+      s.push('<line x1="'+M.l+'" y1="'+Y(m).toFixed(1)+'" x2="'+(M.l+pw)+'" y2="'+Y(m).toFixed(1)+'" stroke="'+(m===0?"#3d4450":"#eee9dd")+'" stroke-width="1"/>');
     });
     s.push('</g>');
 
@@ -1751,7 +1799,7 @@ function drawDecades(){
       s.push('<line x1="'+px.toFixed(1)+'" y1="'+y0+'" x2="'+px.toFixed(1)+'" y2="'+y1+'" stroke="'+(yy===dec+10?"#ded7c6":"#f0ebdf")+'" stroke-width="1"/>');
       s.push('<text x="'+px.toFixed(1)+'" y="'+(y1+15)+'" text-anchor="middle">'+yy+'</text>');
     }
-    s.push('<line x1="'+M.l+'" y1="'+y1+'" x2="'+(M.l+pw)+'" y2="'+y1+'" stroke="#514c42" stroke-width="1"/>');
+    s.push('<line x1="'+M.l+'" y1="'+y1+'" x2="'+(M.l+pw)+'" y2="'+y1+'" stroke="#77818c" stroke-width="1"/>');
     s.push('</g>');
 
     // The decade's own ten years are the part of the panel where a construction
@@ -1759,14 +1807,14 @@ function drawDecades(){
     // into later years. Shading it makes the boundary legible without a label.
     var xEnd = X(Date.UTC(dec+10,0,1));
     if(xEnd < M.l+pw){
-      s.push('<rect x="'+xEnd.toFixed(1)+'" y="'+y0+'" width="'+(M.l+pw-xEnd).toFixed(1)+'" height="'+ph+'" fill="#232019" fill-opacity=".022" pointer-events="none"/>');
+      s.push('<rect x="'+xEnd.toFixed(1)+'" y="'+y0+'" width="'+(M.l+pw-xEnd).toFixed(1)+'" height="'+ph+'" fill="#f4efe4" fill-opacity=".03" pointer-events="none"/>');
     }
 
     // today marker, only in the panel that contains it
     var tx = X(+TODAY);
     if(tx>=M.l && tx<=M.l+pw){
-      s.push('<line x1="'+tx.toFixed(1)+'" y1="'+y0+'" x2="'+tx.toFixed(1)+'" y2="'+y1+'" stroke="#a49b88" stroke-width="1" stroke-dasharray="2 4"/>');
-      s.push('<text x="'+(tx+5).toFixed(1)+'" y="'+(y0+11)+'" fill="#9b9384" font-family="Iowan Old Style,Palatino Linotype,Palatino,Georgia,serif" font-style="italic" font-size="11.5">Today</text>');
+      s.push('<line x1="'+tx.toFixed(1)+'" y1="'+y0+'" x2="'+tx.toFixed(1)+'" y2="'+y1+'" stroke="#7d8791" stroke-width="1" stroke-dasharray="2 4"/>');
+      s.push('<text x="'+(tx+5).toFixed(1)+'" y="'+(y0+11)+'" fill="#939ba5" font-family="Iowan Old Style,Palatino Linotype,Palatino,Georgia,serif" font-style="italic" font-size="11.5">Today</text>');
     }
 
     s.push('</g>');
@@ -1783,7 +1831,7 @@ function drawDecades(){
   });
   s.push('</g>');
 
-  s.push('<text class="ttl" transform="translate(13,'+(M.t+(h-M.t)/2)+') rotate(-90)" text-anchor="middle" fill="#a49b88" font-family="ui-monospace,&quot;SF Mono&quot;,Menlo,&quot;Cascadia Mono&quot;,&quot;Roboto Mono&quot;,monospace" font-size="9.5" letter-spacing="1.4">NET CAPACITY · MW</text>');
+  s.push('<text class="ttl" transform="translate(13,'+(M.t+(h-M.t)/2)+') rotate(-90)" text-anchor="middle" fill="#7d8791" font-family="ui-monospace,&quot;SF Mono&quot;,Menlo,&quot;Cascadia Mono&quot;,&quot;Roboto Mono&quot;,monospace" font-size="9.5" letter-spacing="1.4">NET CAPACITY · MW</text>');
 
   svg.setAttribute("viewBox", "0 0 "+w+" "+h);
   svg.setAttribute("width", w);
@@ -1907,8 +1955,8 @@ function tipHTML(d){
     + (d.cl? "<div class='kv'><span class='k'>Shut down</span><span class='v'>"+fmt(d.cl,false)+"</span></div>" : "")
     + (hasVolts(d)? "<div class='nb'>"+esc(VOLTS[voltKey(d)])+"</div>" : "")
     + (d.note? "<div class='nb'>"+esc(d.note)+"</div>" : "")
-    + (d.cat==="planned"? "<div class='nb' style='color:#9b9384'>Reactor construction has not begun; dates are the developer&rsquo;s or regulator&rsquo;s current targets.</div>" : "")
-    + (d.approx? "<div class='nb' style='color:#9b9384'>Dates approximate.</div>" : "");
+    + (d.cat==="planned"? "<div class='nb' style='color:#939ba5'>Reactor construction has not begun; dates are the developer&rsquo;s or regulator&rsquo;s current targets.</div>" : "")
+    + (d.approx? "<div class='nb' style='color:#939ba5'>Dates approximate.</div>" : "");
 }
 
 // The card sits beside what you clicked, never on top of it: the point of
@@ -2170,7 +2218,7 @@ function drawCap(){
   s.push('<defs><clipPath id="capclip"><rect x="'+m.l+'" y="'+(m.t-6)+'" width="'+iw+'" height="'+(ih+6)+'"/></clipPath></defs>');
   s.push('<g class="grid">');
   for(g=0; g<=YMX; g+=GSTEP){
-    s.push('<line x1="'+m.l+'" y1="'+Y(g).toFixed(1)+'" x2="'+(m.l+iw)+'" y2="'+Y(g).toFixed(1)+'" stroke="'+(g===0?"#cfc8b7":"#eae4d6")+'" stroke-width="1"/>');
+    s.push('<line x1="'+m.l+'" y1="'+Y(g).toFixed(1)+'" x2="'+(m.l+iw)+'" y2="'+Y(g).toFixed(1)+'" stroke="'+(g===0?"#3d4450":"#232830")+'" stroke-width="1"/>');
   }
   s.push('</g><g class="axis">');
   for(g=0; g<=YMX; g+=GSTEP){
@@ -2191,11 +2239,11 @@ function drawCap(){
   // projection first, so the solid record draws over it
   var tx = X(+TODAY), shown = inwin(+TODAY);
   s.push('<g clip-path="url(#capclip)">');
-  s.push('<path d="'+stepPath(future)+'" fill="none" stroke="#2f6d96" stroke-width="1.35" stroke-opacity=".45" stroke-dasharray="2.6 2.6"/>');
-  s.push('<path d="'+stepPath(built)+'" fill="none" stroke="#2f6d96" stroke-width="1.9"/>');
+  s.push('<path d="'+stepPath(future)+'" fill="none" stroke="#5aa3d0" stroke-width="1.35" stroke-opacity=".45" stroke-dasharray="2.6 2.6"/>');
+  s.push('<path d="'+stepPath(built)+'" fill="none" stroke="#5aa3d0" stroke-width="1.9"/>');
   if(shown){
-    s.push('<circle cx="'+tx.toFixed(1)+'" cy="'+Y(now).toFixed(1)+'" r="2.9" fill="#2f6d96"/>');
-    s.push('<line x1="'+tx.toFixed(1)+'" y1="'+m.t+'" x2="'+tx.toFixed(1)+'" y2="'+(m.t+ih)+'" stroke="#a49b88" stroke-width="1" stroke-dasharray="2 4"/>');
+    s.push('<circle cx="'+tx.toFixed(1)+'" cy="'+Y(now).toFixed(1)+'" r="2.9" fill="#5aa3d0"/>');
+    s.push('<line x1="'+tx.toFixed(1)+'" y1="'+m.t+'" x2="'+tx.toFixed(1)+'" y2="'+(m.t+ih)+'" stroke="#7d8791" stroke-width="1" stroke-dasharray="2 4"/>');
   }
   s.push('</g>');
 
@@ -2205,14 +2253,14 @@ function drawCap(){
      with the inline key at the panel's right edge. */
   var SERIF = 'Iowan Old Style,Palatino Linotype,Palatino,Georgia,serif';
   if(shown)
-    s.push('<text x="'+(tx-8).toFixed(1)+'" y="'+(Y(now)-7).toFixed(1)+'" text-anchor="end" fill="#2f6d96" font-family="'+SERIF+'" font-style="italic" font-size="12.5">'+(now/1000).toFixed(1)+' GW today</text>');
+    s.push('<text x="'+(tx-8).toFixed(1)+'" y="'+(Y(now)-7).toFixed(1)+'" text-anchor="end" fill="#5aa3d0" font-family="'+SERIF+'" font-style="italic" font-size="12.5">'+(now/1000).toFixed(1)+' GW today</text>');
 
   // A two-word key, set inline at the right, so the dashed line reads without a
   // paragraph of explanation underneath the figure.
-  s.push('<g font-family="'+SERIF+'" font-style="italic" font-size="11" fill="#9b9384">');
-  s.push('<line x1="'+(m.l+iw-118)+'" y1="'+(m.t+5)+'" x2="'+(m.l+iw-104)+'" y2="'+(m.t+5)+'" stroke="#2f6d96" stroke-width="1.9"/>');
+  s.push('<g font-family="'+SERIF+'" font-style="italic" font-size="11" fill="#939ba5">');
+  s.push('<line x1="'+(m.l+iw-118)+'" y1="'+(m.t+5)+'" x2="'+(m.l+iw-104)+'" y2="'+(m.t+5)+'" stroke="#5aa3d0" stroke-width="1.9"/>');
   s.push('<text x="'+(m.l+iw-99)+'" y="'+(m.t+8.8)+'">on the grid</text>');
-  s.push('<line x1="'+(m.l+iw-118)+'" y1="'+(m.t+19)+'" x2="'+(m.l+iw-104)+'" y2="'+(m.t+19)+'" stroke="#2f6d96" stroke-width="1.35" stroke-opacity=".45" stroke-dasharray="2.6 2.6"/>');
+  s.push('<line x1="'+(m.l+iw-118)+'" y1="'+(m.t+19)+'" x2="'+(m.l+iw-104)+'" y2="'+(m.t+19)+'" stroke="#5aa3d0" stroke-width="1.35" stroke-opacity=".45" stroke-dasharray="2.6 2.6"/>');
   s.push('<text x="'+(m.l+iw-99)+'" y="'+(m.t+22.8)+'">+ planned</text>');
   s.push('</g>');
 
@@ -2307,8 +2355,8 @@ function siteTipHTML(rs, locs){
     + "<div class='m mono'>"+esc((lead.own||"").slice(0,64))+"</div>"
     + "<div class='sitehdr'>Reactors here</div>"
     + rows
-    + (ord.length>14? "<div class='u' style='color:#9b9384'><span class='un'>and "+(ord.length-14)+" more</span></div>" : "")
-    + "<div class='nb' style='color:#9b9384'>Hover the same site on the timeline above for a single reactor&rsquo;s history.</div>";
+    + (ord.length>14? "<div class='u' style='color:#939ba5'><span class='un'>and "+(ord.length-14)+" more</span></div>" : "")
+    + "<div class='nb' style='color:#939ba5'>Hover the same site on the timeline above for a single reactor&rsquo;s history.</div>";
 }
 function siteLead(rs){
   return rs.slice().sort(function(p,q){
@@ -2323,7 +2371,7 @@ function drawMap(){
   s.push('<path class="mesh" d="'+MAP_STATES+'"/>');
   s.push('<path class="land" d="'+MAP_PR+'"/>');
   s.push('<path class="mesh" d="'+MAP_PR+'"/>');
-  s.push('<text x="872" y="562" fill="#9b9384" font-family="ui-monospace,&quot;SF Mono&quot;,Menlo,&quot;Cascadia Mono&quot;,&quot;Roboto Mono&quot;,monospace" font-size="9" letter-spacing="1.1">PUERTO RICO</text>');
+  s.push('<text x="872" y="562" fill="#939ba5" font-family="ui-monospace,&quot;SF Mono&quot;,Menlo,&quot;Cascadia Mono&quot;,&quot;Roboto Mono&quot;,monospace" font-size="9" letter-spacing="1.1">PUERTO RICO</text>');
 
   var live = [], nre = 0;
   SITES.forEach(function(st){
@@ -2551,7 +2599,7 @@ window.addEventListener("resize", function(){
     if(!(beatPx > 0)) beatPx = vh * 1.12;
     var scrolled = window.scrollY - top0;
     tgt.p   = Math.max(0, Math.min(1, scrolled / (4 * beatPx)));
-    tgt.out = Math.max(0, Math.min(1, (scrolled - 4 * beatPx) / (vh * 0.48)));
+    tgt.out = Math.max(0, Math.min(1, (scrolled - 4 * beatPx) / (vh * 0.32)));
     if(!isFinite(tgt.p))   tgt.p = 0;
     if(!isFinite(tgt.out)) tgt.out = 0;
   }
