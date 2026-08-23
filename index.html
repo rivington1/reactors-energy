@@ -1985,34 +1985,43 @@ function tipHTML(d){
 // clear gap; flip to the left when that would run off the page, and centre
 // vertically on the cursor, clamped into the viewport. `left`/`top` are the
 // card's own top-left corner (no CSS transform), relative to the host box.
-function place(el, host, cx, cy){
+function place(el, host, cx, cy, above){
   var box = host.getBoundingClientRect();
   var vw = window.innerWidth || 1200, vh = window.innerHeight || 800;
   var tw = el.offsetWidth||300, th = el.offsetHeight||220;
   var GAP = 24;
+  var lx, ty;
 
-  var lx = cx + GAP;                                  // preferred: to the right
-  if(lx + tw > vw - 12) lx = cx - GAP - tw;           // no room: flip left
-  if(lx < 12) lx = Math.min(Math.max(12, vw - tw - 12), cx + GAP);
+  if(above){
+    /* Touch: the finger is on the point, so the card sits centred above it —
+       never underneath the hand. */
+    lx = Math.max(12, Math.min(vw - tw - 12, cx - tw/2));
+    ty = cy - th - 26;
+    if(ty < 10) ty = Math.min(vh - th - 10, cy + 26);
+  } else {
+    lx = cx + GAP;                                    // preferred: to the right
+    if(lx + tw > vw - 12) lx = cx - GAP - tw;         // no room: flip left
+    if(lx < 12) lx = Math.min(Math.max(12, vw - tw - 12), cx + GAP);
 
-  var ty = cy - th/2;                                 // vertically centred on the point
-  if(ty + th > vh - 10) ty = vh - 10 - th;
-  if(ty < 10) ty = 10;
+    ty = cy - th/2;                                   // vertically centred on the point
+    if(ty + th > vh - 10) ty = vh - 10 - th;
+    if(ty < 10) ty = 10;
+  }
 
   el.style.left = (lx - box.left)+"px";
   el.style.top  = (ty - box.top)+"px";
   el.style.opacity = 1;
 }
 
-function showTip(d, cx, cy){
+function showTip(d, cx, cy, above){
   var pending = !PHOTO.hasOwnProperty(d.name);
   tip.innerHTML = tipHTML(d);
-  place(tip, svg.parentNode, cx, cy);
+  place(tip, svg.parentNode, cx, cy, above);
   if(pending) fetchPhoto(d, function(){
     // Only redraw if the cursor is still on the same reactor.
     if(hot && hot.d === d && +tip.style.opacity !== 0){
       tip.innerHTML = tipHTML(d);
-      place(tip, svg.parentNode, cx, cy);
+      place(tip, svg.parentNode, cx, cy, above);
     }
   });
 }
@@ -2020,14 +2029,17 @@ function showTip(d, cx, cy){
 // Nearest-line hit test. Geometric rather than DOM-based, so a 0.9px line is
 // still easy to hover: we take the closest line whose x-range brackets the
 // cursor, within a vertical tolerance, then fall back to a wider radius.
-function pick(mx, my){
+function pick(mx, my, loose){
+  /* `loose` widens the tolerances for a fingertip, which is far blunter than
+     a cursor: a 1px line needs roughly a 40px column to be tappable. */
+  var DY = loose ? 22 : 8, DX = loose ? 42 : 26;
   var best=null, bd=1e9;
   for(var i=0;i<HITS.length;i++){
     var t=HITS[i];
     var dy=Math.abs(my-t.y);
-    if(dy>8) continue;
+    if(dy>DY) continue;
     var dx = mx < t.x1-6 ? (t.x1-6)-mx : (mx > t.x2+6 ? mx-(t.x2+6) : 0);
-    if(dx>26) continue;
+    if(dx>DX) continue;
     var score = dx*dx*2.2 + dy*dy;      // favour vertical closeness
     if(score<bd){ bd=score; best=t; }
   }
@@ -2054,6 +2066,35 @@ function hover(ev){
 function wire(){
   svg.addEventListener("mousemove", hover);
   svg.addEventListener("mouseleave", clearHot);
+
+  /* ---- touch: tap a line to pin its card; tap empty plot to dismiss ----
+     Without this, a tap fires a synthetic mousedown that starts the
+     drag-to-zoom selection and hides the tooltip in the same instant — the
+     card flashes and vanishes. The tap must never reach that path. */
+  var tst = {x:0, y:0, t:0, moved:false};
+  svg.addEventListener("touchstart", function(ev){
+    if(ev.touches.length !== 1) return;
+    tst.x = ev.touches[0].clientX; tst.y = ev.touches[0].clientY;
+    tst.t = Date.now(); tst.moved = false;
+  }, {passive:true});
+  svg.addEventListener("touchmove", function(ev){
+    var t = ev.touches[0];
+    if(Math.abs(t.clientX-tst.x) > 9 || Math.abs(t.clientY-tst.y) > 9) tst.moved = true;
+  }, {passive:true});
+  svg.addEventListener("touchend", function(ev){
+    if(tst.moved || Date.now()-tst.t > 700) return;   // a scroll, not a tap
+    var p = evpt({clientX:tst.x, clientY:tst.y});
+    if(p.x<PLOT.l-8 || p.x>PLOT.r+8 || p.y<PLOT.t-4 || p.y>PLOT.b+4){ clearHot(); return; }
+    ev.preventDefault();          // suppress the synthetic mouse sequence
+    var t = pick(p.x, p.y, true);
+    if(!t){ clearHot(); return; }
+    if(t !== hot){
+      if(hot && hot.g) hot.g.classList.remove("hi");
+      hot = t;
+      if(t.g){ t.g.classList.add("hi"); t.g.parentNode.appendChild(t.g); }
+    }
+    showTip(t.d, tst.x, tst.y, true);
+  }, {passive:false});
 
   // The wheel zooms both axes about the pointer, so scrolling into a crowded
   // patch pulls it open in time *and* in capacity rather than just stretching it
@@ -2468,6 +2509,60 @@ mapSvg.addEventListener("mousemove", function(ev){
   }
 });
 mapSvg.addEventListener("mouseleave", clearMhot);
+
+/* ---- touch: tap a site to pin its card, with a fingertip-sized target ---- */
+function showSite(best, cx, cy, above){
+  if(best !== mhot){
+    if(mhot && mhot.g) mhot.g.classList.remove("hi");
+    mhot = best;
+    if(best.g){ best.g.classList.add("hi"); best.g.parentNode.appendChild(best.g); }
+  }
+  var lead = siteLead(best.rs);
+  var pending = !PHOTO.hasOwnProperty(lead.name);
+  mtip.innerHTML = siteTipHTML(best.rs, best.locs);
+  place(mtip, mapSvg.parentNode, cx, cy, above);
+  if(pending){
+    var keep = best;
+    fetchPhoto(lead, function(){
+      if(mhot === keep){
+        mtip.innerHTML = siteTipHTML(keep.rs, keep.locs);
+        place(mtip, mapSvg.parentNode, cx, cy, above);
+      }
+    });
+  }
+}
+var mtst = {x:0, y:0, t:0, moved:false};
+mapSvg.addEventListener("touchstart", function(ev){
+  if(ev.touches.length !== 1) return;
+  mtst.x = ev.touches[0].clientX; mtst.y = ev.touches[0].clientY;
+  mtst.t = Date.now(); mtst.moved = false;
+}, {passive:true});
+mapSvg.addEventListener("touchmove", function(ev){
+  var t = ev.touches[0];
+  if(Math.abs(t.clientX-mtst.x) > 9 || Math.abs(t.clientY-mtst.y) > 9) mtst.moved = true;
+}, {passive:true});
+mapSvg.addEventListener("touchend", function(ev){
+  if(mtst.moved || Date.now()-mtst.t > 700) return;
+  var p = mpt({clientX:mtst.x, clientY:mtst.y});
+  var best = null, bd = 1e9;
+  for(var i=0;i<MHITS.length;i++){
+    var t = MHITS[i];
+    var rr = Math.max(t.r, 15);       // small sites still get a fingertip target
+    var dx = p.x-t.x, dy = p.y-t.y, d2 = dx*dx+dy*dy;
+    if(d2 > rr*rr) continue;
+    if(d2 < bd){ bd = d2; best = t; }
+  }
+  ev.preventDefault();
+  if(!best){ clearMhot(); return; }
+  showSite(best, mtst.x, mtst.y, true);
+}, {passive:false});
+
+/* A tap anywhere outside a figure dismisses whichever card is pinned. */
+document.addEventListener("touchstart", function(ev){
+  var n = ev.target;
+  if(svg && !svg.contains(n) && !(tip && tip.contains(n))) clearHot();
+  if(mapSvg && !mapSvg.contains(n) && !(mtip && mtip.contains(n))) clearMhot();
+}, {passive:true});
 
 wire();
 draw();          // draws the plot and the fleet panel beneath it
