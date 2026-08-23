@@ -264,10 +264,10 @@
      pull the sequence apart. If an image is missing the beat still reads:
      the tint layer and the drawn graphic carry it on their own. */
   .plate{position:absolute;inset:0;background-size:cover;background-position:center;
-    opacity:0;transition:opacity .18s linear;
-    filter:grayscale(1) contrast(1.06) brightness(.62)}
+    opacity:0;transition:opacity .3s linear;
+    filter:saturate(.94) contrast(1.03) brightness(.82)}
   .plate::after{content:"";position:absolute;inset:0;
-    background:radial-gradient(120% 90% at 50% 42%,rgba(10,12,15,.28) 0%,rgba(10,12,15,.86) 62%,var(--night) 100%)}
+    background:radial-gradient(130% 100% at 50% 38%,rgba(10,12,15,.04) 0%,rgba(10,12,15,.38) 60%,rgba(10,12,15,.88) 100%)}
   #story.no-plates .plate{display:none}
   /* Grain. A single tiled SVG turbulence, cheap and static — no per-frame work. */
   .grain{position:absolute;inset:0;pointer-events:none;opacity:.055;mix-blend-mode:overlay;
@@ -302,8 +302,28 @@
     text-shadow:0 2px 40px rgba(10,12,15,.95)}
   .beat-copy .yr small{font-size:.42em;letter-spacing:-.02em;color:var(--n-muted);
     display:inline-block;margin-left:.28em;vertical-align:baseline}
-  .beat-copy .say{font:clamp(17px,2.05vw,25px)/1.42 var(--serif);color:var(--n-ink-2);
-    max-width:33ch;margin:0;text-shadow:0 1px 18px rgba(10,12,15,.92)}
+  .beat-copy .yr.range{font-size:clamp(36px,6.2vw,86px);letter-spacing:-.02em}
+  .beat-copy .say{font:clamp(17px,2.05vw,25px)/1.42 var(--serif);color:var(--n-ink);
+    max-width:46ch;margin:0;text-shadow:0 1px 18px rgba(10,12,15,.95)}
+
+  /* Small reactor photographs, pinned to their year on the timeline. Each card
+     rides the same camera as the drawn bars — it slides with the pan and only
+     appears once the reveal front has passed its date, so the photographs
+     arrive in step with the lines they identify. */
+  .minis{position:absolute;inset:0;pointer-events:none;z-index:2}
+  .mini{position:absolute;left:0;top:0;width:124px;margin:0;opacity:0;
+    will-change:transform,opacity;
+    background:rgba(18,22,27,.92);border:1px solid var(--n-rule);padding:5px 5px 4px;
+    box-shadow:0 8px 26px rgba(0,0,0,.45)}
+  .mini img{display:block;width:100%;height:76px;object-fit:cover;
+    filter:saturate(.85) contrast(1.04) brightness(.92)}
+  .mini figcaption{font:400 8.5px/1.35 var(--mono);letter-spacing:.12em;
+    text-transform:uppercase;color:var(--n-ink-2);padding:5px 1px 1px;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis}
+  .mini::after{content:"";position:absolute;left:50%;top:100%;width:1px;height:16px;
+    background:linear-gradient(var(--n-faint),transparent)}
+  @media (max-width:900px), (max-aspect-ratio:1/1.02){ .minis{display:none} }
+  @media (prefers-reduced-motion:reduce){ .minis{display:none} }
   .beat-copy .say em{font-style:italic;color:var(--n-ink)}
   /* Figure readout — the one element that is allowed to be loud. */
   .beat-copy .fig{display:flex;align-items:flex-end;gap:11px;margin:22px 0 0}
@@ -415,51 +435,47 @@
 
 <section id="story" aria-label="A short history of American reactors">
   <div id="story-stage">
-    <div class="plate" id="p1" style="background-image:url('story/1942-chicago-pile.jpg')"></div>
-    <div class="plate" id="p2" style="background-image:url('story/1960s-buildout.jpg')"></div>
-    <div class="plate" id="p3" style="background-image:url('story/1979-three-mile-island.jpg')"></div>
-    <div class="plate" id="p4" style="background-image:url('story/2026-advanced-reactors.jpg')"></div>
+    <div class="plate" id="p1" style="background-image:url('story/beat1.jpg')"></div>
+    <div class="plate" id="p2" style="background-image:url('story/beat2.jpg')"></div>
+    <div class="plate" id="p3" style="background-image:url('story/beat3.jpg')"></div>
+    <div class="plate" id="p4" style="background-image:url('story/beat4.jpg')"></div>
     <svg id="sky" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
     <div class="grain"></div>
     <div class="scrim"></div>
 
+    <div class="minis" id="minis" aria-hidden="true">
+      <figure class="mini" data-y="1951.97" data-row="0"><img src="story/minis/ebr1.jpg" alt=""><figcaption>EBR&#8209;I &middot; 1951</figcaption></figure>
+      <figure class="mini" data-y="1958.40" data-row="1"><img src="story/minis/shippingport.jpg" alt=""><figcaption>Shippingport &middot; 1957</figcaption></figure>
+      <figure class="mini" data-y="1960.29" data-row="0"><img src="story/minis/dresden.jpg" alt=""><figcaption>Dresden &middot; 1960</figcaption></figure>
+      <figure class="mini" data-y="1962.71" data-row="1"><img src="story/minis/indianpoint.jpg" alt=""><figcaption>Indian Point &middot; 1962</figcaption></figure>
+      <figure class="mini" data-y="1973.79" data-row="0"><img src="story/minis/brownsferry.jpg" alt=""><figcaption>Browns Ferry &middot; 1974</figcaption></figure>
+      <figure class="mini" data-y="1974.47" data-row="1"><img src="story/minis/tmi.jpg" alt=""><figcaption>Three Mile Island</figcaption></figure>
+      <figure class="mini" data-y="1984.86" data-row="0"><img src="story/minis/diablo.jpg" alt=""><figcaption>Diablo Canyon &middot; 1985</figcaption></figure>
+      <figure class="mini" data-y="1985.44" data-row="1"><img src="story/minis/paloverde.jpg" alt=""><figcaption>Palo Verde &middot; 1986</figcaption></figure>
+      <figure class="mini" data-y="1986.58" data-row="2"><img src="story/minis/shoreham.jpg" alt=""><figcaption>Shoreham &middot; abandoned</figcaption></figure>
+      <figure class="mini" data-y="1996.10" data-row="0"><img src="story/minis/wattsbar.jpg" alt=""><figcaption>Watts Bar &middot; 1996</figcaption></figure>
+      <figure class="mini" data-y="2023.25" data-row="1"><img src="story/minis/vogtle.jpg" alt=""><figcaption>Vogtle 3 &middot; 2023</figcaption></figure>
+    </div>
+
     <div class="beats">
       <div class="beat-copy b1" id="c1">
-        <p class="era">Stagg Field, Chicago &middot; 2 December 1942</p>
         <p class="yr">1942</p>
-        <p class="say">Under the west stands of a disused football stadium, a lattice of graphite
-          blocks and uranium slugs sustains the first controlled chain reaction. <em>Chicago Pile&#8209;1</em>
-          has no shielding, no coolant and no containment &mdash; only a man with an axe, standing by
-          to cut a rope.</p>
-        <div class="fig"><b>0.5 W</b><span>output at first criticality</span></div>
+        <p class="say">America builds the world&rsquo;s first nuclear reactor that achieves criticality. Chicago Pile 1.</p>
       </div>
 
       <div class="beat-copy b2" id="c2">
-        <p class="era">The build&#8209;out &middot; 1953&ndash;1979</p>
-        <p class="yr">107.6 <small>GW</small></p>
-        <p class="say">Seventy&#8209;two reactors break ground in the 1960s. A hundred and one follow in
-          the 1970s, almost all of them pressurised or boiling water designs. <em>The fleet crests in
-          1996</em> and never goes higher.</p>
-        <div class="fig"><b>122</b><span>units that reached commercial operation</span></div>
+        <p class="yr range">1960s-1970s</p>
+        <p class="say">Over 100GW of nuclear power generation capacity gets built in the US, primarily Pressurized or Boiling Water Reactor Designs.</p>
       </div>
 
       <div class="beat-copy b3" id="c3">
-        <p class="era">Three Mile Island, Pennsylvania &middot; 28 March 1979</p>
-        <p class="yr">1979</p>
-        <p class="say">A loss&#8209;of&#8209;coolant accident partly melts the core of Unit&nbsp;2. It leaves no
-          detectable health effect on the workers or the public &mdash; and it ends new American nuclear
-          construction for a generation. <em>One reactor breaks ground in the 1980s. None in the
-          1990s. None in the 2000s.</em></p>
-        <div class="fig"><b>44</b><span>units abandoned part&#8209;built &middot; 46.7 GW never finished</span></div>
+        <p class="yr">1971</p>
+        <p class="say">Loss of Cooling Accident occurs at the Three Mile Island Nuclear Generating Station near Harrisburg, Pennsylvania. Although it had no detectable health effects on plant workers or the public it effectively halted new reactor development in the United States for the next 50 years.</p>
       </div>
 
       <div class="beat-copy b4" id="c4">
-        <p class="era">Today &middot; August 2026</p>
-        <p class="yr">2026</p>
-        <p class="say">The licensing pathways reopen, and a new cohort reaches criticality inside a
-          year of breaking ground &mdash; one of them in under eight months. Sodium&#8209;cooled,
-          gas&#8209;cooled, molten&#8209;salt. <em>Almost none of them cooled by water.</em></p>
-        <div class="fig"><b>5</b><span>advanced reactors critical since June</span></div>
+        <p class="yr range">Today</p>
+        <p class="say">Executive orders lead to the development of a new golden age of nuclear energy in America, which has led to 5 Advanced Reactors going critical.</p>
       </div>
     </div>
 
@@ -2398,6 +2414,10 @@ window.addEventListener("resize", function(){
   var skip  = document.getElementById("skip");
   var copies = [1,2,3,4].map(function(n){ return document.getElementById("c"+n); });
   var plates = [1,2,3,4].map(function(n){ return document.getElementById("p"+n); });
+  var minisEl = document.getElementById("minis");
+  var minis = [].slice.call(document.querySelectorAll("#minis .mini")).map(function(el){
+    return { el:el, y:+el.getAttribute("data-y"), row:+el.getAttribute("data-row") || 0 };
+  });
 
   /* ---- palette: the figure's type colours, lifted for a dark ground ---- */
   var NC = {
@@ -2502,9 +2522,15 @@ window.addEventListener("resize", function(){
   }
 
   function readScroll(){
+    /* A zero innerHeight (hidden tab, mid-layout load) would make these
+       divisions NaN and poison the eased camera state for good. */
+    var vh = window.innerHeight || 800;
+    if(!(beatPx > 0)) beatPx = vh * 1.12;
     var scrolled = window.scrollY - top0;
     tgt.p   = Math.max(0, Math.min(1, scrolled / (4 * beatPx)));
-    tgt.out = Math.max(0, Math.min(1, (scrolled - 4 * beatPx) / (window.innerHeight * 0.48)));
+    tgt.out = Math.max(0, Math.min(1, (scrolled - 4 * beatPx) / (vh * 0.48)));
+    if(!isFinite(tgt.p))   tgt.p = 0;
+    if(!isFinite(tgt.out)) tgt.out = 0;
   }
 
   /* ---- copy, plates and chrome follow the beat, not the eased camera, so a
@@ -2528,6 +2554,7 @@ window.addEventListener("resize", function(){
     document.documentElement.classList.toggle("story-live", live);
     document.body.classList.toggle("story-live", live);
     sky.style.opacity = 1 - smooth(Math.min(1, Math.max(0, (out - 0.06) / 0.44)));
+    if(minisEl) minisEl.style.opacity = sky.style.opacity;
   }
 
   /* ---- the frame ---- */
@@ -2683,6 +2710,23 @@ window.addEventListener("resize", function(){
     }
 
     sky.innerHTML = s.join("");
+
+    /* Photograph cards ride the same camera as the bars: positioned at their
+       year's pixel each frame, revealed only once the front has passed their
+       date, and faded at the frame edges so they never clip mid-card. */
+    for(var q = 0; q < minis.length; q++){
+      var mn = minis[q];
+      if(narrow || mn.y > rev + 0.2 || mn.y < x0 - 2 || mn.y > x1 + 2){
+        mn.el.style.opacity = 0; continue;
+      }
+      var mx = X(mn.y);
+      var my = H * (0.045 + mn.row * 0.150);
+      mn.el.style.transform = "translate(" + (mx - 62).toFixed(1) + "px," + my.toFixed(1) + "px)";
+      var edgeL = Math.min(1, Math.max(0, (mx - padL - 24) / 110));
+      var edgeR = Math.min(1, Math.max(0, (W - padR + 30 - mx) / 110));
+      var grow  = Math.min(1, Math.max(0, (rev - mn.y + 0.2) * 1.6));
+      mn.el.style.opacity = (0.96 * edgeL * edgeR * grow).toFixed(2);
+    }
   }
 
   /* ---- loop ---- */
