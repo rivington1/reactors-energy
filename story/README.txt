@@ -6,12 +6,15 @@ Plates (full-bleed, one per beat)
 beat1.jpg .. beat4.jpg are the four transition slides, shown full-bleed
 behind each beat's text. They come from the author's source document:
 
-  beat1.jpg   Chicago Pile-1, cutaway drawing by Melvin A. Miller, 1946.
-  beat2.jpg   Single-containment PWR on a river at low sun (1960s-70s buildout).
-  beat3.jpg   Three Mile Island from the air, cooling towers plumed.
-  beat4.jpg   President Trump at the May 23, 2025 signing of the nuclear
-              executive orders in the Oval Office. Frame from the official
-              White House video (US government work, public domain).
+  beat1.jpg      Chicago Pile-1, cutaway drawing by Melvin A. Miller, 1946.
+  beat1950s.jpg  EBR-1's four light bulbs, the first nuclear electricity,
+                 20 December 1951 (DOE photograph, public domain, via Commons).
+  beat2.jpg      Single-containment PWR on a river at low sun (1960s-70s buildout).
+  beat3.jpg      Three Mile Island from the air, cooling towers plumed.
+  beat1980s.jpg  Watts Bar at night — the last pre-1980 construction start to
+                 reach the grid, in 2016 (via Wikipedia/Commons).
+  beat4.jpg      The White House, North Portico (via Commons) — the executive
+                 orders beat, kept apolitical.
 
 The plates are still optional at runtime: if none load, the engine adds a
 `.no-plates` class and the sequence reads on the data graphic and type alone.
@@ -30,7 +33,12 @@ Mini sources — lead images of the corresponding English Wikipedia articles,
 fetched 2026-08-22 (largely NRC / DOE / TVA public-domain photographs;
 see each article's file page for exact license):
 
-  ebr1.jpg          Experimental Breeder Reactor I
+  ebr1.jpg          EBR-1 first-electricity light bulbs (Commons, DOE)
+  brownsferry.jpg   Browns Ferry 1974 aerial (Commons, TVA/NRC)
+  diablo.jpg        Diablo Canyon from Port San Luis (Commons)
+  mark0/ward/unity/aalox/groves.jpg — the 2026 cohort, cut from the
+                    Renaissance-section photographs
+  ebr1 (orig)       Experimental Breeder Reactor I
   shippingport.jpg  Shippingport Atomic Power Station
   dresden.jpg       Dresden Generating Station
   indianpoint.jpg   Indian Point Energy Center
