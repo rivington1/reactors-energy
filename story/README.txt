@@ -13,7 +13,8 @@ behind each beat's text. They come from the author's source document:
   beat3.jpg      Three Mile Island from the air, cooling towers plumed.
   beat1980s.jpg  Watts Bar at night — the last pre-1980 construction start to
                  reach the grid, in 2016 (via Wikipedia/Commons).
-  beat4.jpg      The White House, North Portico (via Commons) — the executive
+  beat4.jpg      The White House, North Portico with flag, from Lafayette
+                 Square (Commons, Don Ramey Logan, CC BY-SA) — the executive
                  orders beat, kept apolitical.
 
 The plates are still optional at runtime: if none load, the engine adds a
@@ -60,3 +61,11 @@ Renaissance section
   crit/aalox.jpg    Aalo Atomics critical test reactor (via world-nuclear-news.org).
   crit/groves.jpg   Oklo Isotopes Groves facility, Lockhart TX (via powermag.com,
                     cropped to remove watermark).
+
+Tooltip photographs (tips/ and reuse of minis/, crit/)
+------------------------------------------------------
+The chart and map tooltips prefer the vetted local photographs declared in
+PHOTO_FIXED in index.html; reactors not listed there fall back to a live
+Wikipedia lead-image search. tips/hermes.jpg is a Kairos Power rendering
+(via energy.gov); tips/kemmerer.jpg is a TerraPower rendering (via
+power-eng.com). Renderings are credited as such in the tooltip.

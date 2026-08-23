@@ -1884,12 +1884,30 @@ function phTokens(name){
   return name.toLowerCase().replace(/[^a-z0-9 ]+/g," ").split(/\s+/)
     .filter(function(t){ return t.length>=4 && !PH_STOP[t]; });
 }
-// A few of the newest reactors have no Wikipedia article and so will never turn
-// up a photograph through the search below. Where the builder publishes its own
-// image of the machine, point straight at it.
+// Vetted photographs shipped with the site, keyed by reactor name. These are
+// preferred over the live Wikipedia search: the newest reactors have no
+// article to find, and a few articles lead with the wrong image entirely
+// (Browns Ferry's is a road sign). Renderings are marked as such.
 var PHOTO_FIXED = {
-  "Ward 250": {url:"https://www.valaratomics.com/heros/ward-250.webp",
-               title:"Ward 250, Emery County, Utah", cr:"Valar Atomics"}
+  "Ward 250": {url:"story/minis/ward.jpg", title:"Ward 250 vessel, Emery County, Utah", cr:"Valar Atomics"},
+  "Aalo-X": {url:"story/crit/aalox.jpg", title:"Critical test reactor, Idaho Falls", cr:"Aalo Atomics"},
+  "Mark-0": {url:"story/crit/antares.jpg", title:"Mark-0 core assembly, Idaho National Laboratory", cr:"Antares Industries"},
+  "Unity": {url:"story/crit/unity.jpg", title:"Unity demonstration reactor, Idaho National Laboratory", cr:"Deployable Energy"},
+  "Groves Isotope Test Reactor": {url:"story/crit/groves.jpg", title:"Groves facility, Lockhart, Texas", cr:"Oklo"},
+  "Hermes": {url:"story/tips/hermes.jpg", title:"Hermes demonstration plant, Oak Ridge", cr:"Kairos Power, rendering"},
+  "Kemmerer": {url:"story/tips/kemmerer.jpg", title:"Natrium plant, Kemmerer, Wyoming", cr:"TerraPower, rendering"},
+  "Crane Clean Energy Center": {url:"story/minis/tmi.jpg", title:"Three Mile Island Unit 1, restarting as Crane", cr:"Wikimedia"},
+  "Experimental Breeder Reactor I": {url:"story/minis/ebr1.jpg", title:"EBR-1's first four light bulbs, 1951", cr:"DOE"},
+  "Shippingport": {url:"story/minis/shippingport.jpg", title:"Shippingport Atomic Power Station", cr:"Wikimedia"},
+  "Dresden": {url:"story/minis/dresden.jpg", title:"Dresden Generating Station", cr:"Wikimedia"},
+  "Indian Point": {url:"story/minis/indianpoint.jpg", title:"Indian Point on the Hudson", cr:"Wikimedia"},
+  "Browns Ferry": {url:"story/minis/brownsferry.jpg", title:"Browns Ferry, 1974", cr:"TVA"},
+  "Three Mile Island": {url:"story/minis/tmi.jpg", title:"Three Mile Island, Susquehanna River", cr:"Wikimedia"},
+  "Diablo Canyon": {url:"story/minis/diablo.jpg", title:"Diablo Canyon from Port San Luis", cr:"Wikimedia"},
+  "Palo Verde": {url:"story/minis/paloverde.jpg", title:"Palo Verde Generating Station", cr:"Wikimedia"},
+  "Shoreham": {url:"story/minis/shoreham.jpg", title:"Shoreham, completed and never run", cr:"Wikimedia"},
+  "Watts Bar": {url:"story/minis/wattsbar.jpg", title:"Watts Bar at night", cr:"Wikimedia"},
+  "Vogtle": {url:"story/minis/vogtle.jpg", title:"Plant Vogtle at dusk", cr:"Wikimedia"}
 };
 
 function photoHTML(d){
@@ -1942,9 +1960,6 @@ function tipHTML(d){
     + "<div class='t'>"+esc(d.built || "Unknown builder")+"</div>"
     + "<div class='t2'>"+esc(d.name)+(d.unit?" "+esc(d.unit):"")+"</div>"
     + (d.crit? "<div class='critbadge'><span class='rg'></span>Achieved criticality &middot; "+fmtd(d.crit)+"</div>" : "")
-    + (hasVolts(d)? "<div class='voltbadge'><svg width='9' height='12' viewBox='0 0 9 12' aria-hidden='true'>"
-        + "<path d='M6.6 .5 L.8 6.4 L3.9 6.4 L2.6 11.5 L8.3 5.3 L5.2 5.3 Z' fill='#231f14'/></svg>"
-        + "Has generated electricity</div>" : "")
     + "<div class='m'>"+esc(d.loc)+"</div>"
     + "<div class='m mono'>"+TYPE[d.type].label.toUpperCase()+(d.model? " &middot; "+esc(d.model) : "")+"</div>"
     + "<div class='badge'><span class='lswatch' style='background:"+lf.c+"'></span>"+lf.short+"</div>"
