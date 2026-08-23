@@ -231,10 +231,248 @@
   @media (max-width:600px){
     .controls{columns:2 146px;column-gap:20px}
   }
+
+  /* ==========================================================================
+     SCROLL STORY
+     A four-beat narrative that runs above the interactive figure. The stage is
+     sticky and the beats are ordinary scroll spacers, so native scrolling is
+     never intercepted: no wheel handlers, no scroll hijacking, no smooth-scroll
+     shim. Values are eased toward their targets in a rAF loop instead, which
+     buys the momentum feel without taking the scrollbar away from the reader.
+     The graphic is drawn from the same 230 reactors as the figure below.
+     ====================================================================== */
+  :root{
+    --night:#0a0c0f; --night-2:#12161b;
+    --n-ink:#f4efe4; --n-ink-2:#c3bcac; --n-muted:#8a8375; --n-faint:#5d574c;
+    --n-rule:#252b32; --n-pwr:#5aa3d0; --n-bwr:#d99a45;
+  }
+  /* Dark page furniture while the story is on screen. The interactive figure
+     keeps the paper palette; the transition between the two is the handoff. */
+  html.story-live{background:var(--night)}
+  body.story-live{background:var(--night)}
+
+  #story{position:relative;background:var(--night);color:var(--n-ink);
+    /* four beats plus the handoff band. Beat length is set in vh so the pacing
+       holds on a laptop and a tall monitor alike. */
+    --beat:112vh}
+  #story-stage{position:sticky;top:0;height:100vh;overflow:hidden;
+    display:grid;place-items:center}
+
+  /* Photographic plates. Each beat has one; they cross-fade. The plate is
+     desaturated and blended so the colour in the frame comes from the data,
+     not the photograph — four differently-lit stock images would otherwise
+     pull the sequence apart. If an image is missing the beat still reads:
+     the tint layer and the drawn graphic carry it on their own. */
+  .plate{position:absolute;inset:0;background-size:cover;background-position:center;
+    opacity:0;transition:opacity .18s linear;
+    filter:grayscale(1) contrast(1.06) brightness(.62)}
+  .plate::after{content:"";position:absolute;inset:0;
+    background:radial-gradient(120% 90% at 50% 42%,rgba(10,12,15,.28) 0%,rgba(10,12,15,.86) 62%,var(--night) 100%)}
+  #story.no-plates .plate{display:none}
+  /* Grain. A single tiled SVG turbulence, cheap and static — no per-frame work. */
+  .grain{position:absolute;inset:0;pointer-events:none;opacity:.055;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+  /* The drawn graphic. One SVG, redrawn each frame from the reactor records. */
+  #sky{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+  /* Legibility scrim. The bars are allowed to run *behind* the copy but never
+     through it: an ellipse anchored bottom-left lifts the text column out of
+     the graphic, and a shallow full-width wash seats the baseline. The upper
+     right — where the graphic actually lives — is left untouched. */
+  .scrim{position:absolute;inset:0;pointer-events:none;
+    background:
+      radial-gradient(128% 80% at 4% 104%,
+        rgba(10,12,15,.97) 0%, rgba(10,12,15,.93) 30%,
+        rgba(10,12,15,.62) 56%, rgba(10,12,15,.18) 74%, rgba(10,12,15,0) 86%),
+      linear-gradient(to top,
+        rgba(10,12,15,.72) 0%, rgba(10,12,15,.34) 16%, rgba(10,12,15,0) 34%)}
+
+  /* Copy. Sits in the lower third so the graphic owns the optical centre. */
+  .beats{position:absolute;inset:0;pointer-events:none}
+  .beat-copy{position:absolute;left:0;right:0;bottom:11vh;
+    padding:0 6vw;opacity:0;transform:translateY(14px);
+    transition:opacity .3s ease,transform .5s cubic-bezier(.16,1,.3,1)}
+  .beat-copy.on{opacity:1;transform:none}
+  .beat-copy .era{font:400 10.5px/1 var(--mono);letter-spacing:.24em;text-transform:uppercase;
+    color:var(--n-muted);margin:0 0 14px;display:flex;align-items:center;gap:13px}
+  .beat-copy .era::after{content:"";flex:1;height:1px;background:var(--n-rule);max-width:190px}
+  .beat-copy .yr{font:400 clamp(46px,9.5vw,132px)/.86 var(--display);letter-spacing:-.035em;
+    margin:0 0 18px;color:var(--n-ink);font-variant-numeric:tabular-nums;
+    text-shadow:0 2px 40px rgba(10,12,15,.95)}
+  .beat-copy .yr small{font-size:.42em;letter-spacing:-.02em;color:var(--n-muted);
+    display:inline-block;margin-left:.28em;vertical-align:baseline}
+  .beat-copy .say{font:clamp(17px,2.05vw,25px)/1.42 var(--serif);color:var(--n-ink-2);
+    max-width:33ch;margin:0;text-shadow:0 1px 18px rgba(10,12,15,.92)}
+  .beat-copy .say em{font-style:italic;color:var(--n-ink)}
+  /* Figure readout — the one element that is allowed to be loud. */
+  .beat-copy .fig{display:flex;align-items:flex-end;gap:11px;margin:22px 0 0}
+  .beat-copy .fig b{font:400 clamp(30px,4.6vw,58px)/.9 var(--mono);letter-spacing:-.03em;
+    color:var(--crit);font-variant-numeric:tabular-nums}
+  .beat-copy .fig span{font:400 10.5px/1.5 var(--mono);letter-spacing:.15em;
+    text-transform:uppercase;color:var(--n-muted);max-width:19ch;padding-bottom:5px}
+  .beat-copy.b4 .fig b{color:var(--volt)}
+
+  @media (max-width:900px), (max-aspect-ratio:1/1.02){
+    /* The graphic is compressed into the top half on phones, so the scrim
+       stops being an ellipse and becomes a straight horizon wash. */
+    .scrim{background:linear-gradient(to top,
+      rgba(10,12,15,.99) 0%, rgba(10,12,15,.97) 38%,
+      rgba(10,12,15,.72) 50%, rgba(10,12,15,.12) 62%, rgba(10,12,15,0) 72%)}
+    .beat-copy{bottom:8vh;padding:0 7vw}
+    .beat-copy .say{max-width:42ch}
+    .beat-copy .fig{margin-top:18px}
+  }
+
+  /* Scroll spacers. These, and nothing else, drive the sequence. */
+  .beat{height:var(--beat);position:relative;pointer-events:none}
+
+  /* Handoff. The dark lifts to paper across this band and the stage fades,
+     so the story ends by turning into the figure rather than stopping. */
+  #story-out{height:48vh;position:relative;
+    background:linear-gradient(to bottom,var(--night) 0%,#22242a 18%,#4a4740 42%,
+      #918b7b 68%,#ddd8ca 88%,var(--paper) 100%)}
+  #story-out .cue{position:absolute;left:0;right:0;top:52%;text-align:center;
+    opacity:0;transition:opacity .45s ease}
+  #story-out .cue.on{opacity:1}
+  #story-out .cue b{display:block;font:400 clamp(22px,3.2vw,40px)/1.14 var(--display);
+    letter-spacing:-.02em;color:var(--ink);margin:0 0 11px}
+  #story-out .cue{font:400 10.5px/1.6 var(--mono);letter-spacing:.2em;
+    text-transform:uppercase;color:var(--ink-2)}
+  #story-out .cue b{display:block;font:400 25px/1.25 var(--display);letter-spacing:-.015em;
+    text-transform:none;color:var(--ink);margin-bottom:7px}
+
+  /* A quiet scroll hint on the first beat only. */
+  .hint{position:absolute;left:6vw;bottom:4.4vh;display:flex;align-items:center;gap:10px;
+    font:400 9.5px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;
+    color:var(--n-faint);transition:opacity .35s}
+  .hint i{display:block;width:1px;height:26px;background:linear-gradient(var(--n-faint),transparent);
+    animation:drip 1.9s ease-in-out infinite}
+  @keyframes drip{0%,100%{transform:scaleY(.35);opacity:.4;transform-origin:top}
+    50%{transform:scaleY(1);opacity:1;transform-origin:top}}
+
+  /* Skip control. Anyone who came for the figure can leave immediately, and it
+     stays reachable by keyboard. */
+  .skip{position:fixed;top:18px;right:18px;z-index:40;opacity:0;pointer-events:none;
+    transition:opacity .3s;background:rgba(10,12,15,.72);backdrop-filter:blur(6px);
+    border:1px solid var(--n-rule);color:var(--n-ink-2);padding:7px 12px;
+    font:400 9.5px/1 var(--mono);letter-spacing:.15em;text-transform:uppercase;
+    cursor:pointer;text-decoration:none}
+  .skip.on{opacity:1;pointer-events:auto}
+  .skip:hover{border-color:var(--n-ink-2);color:var(--n-ink)}
+  .skip:focus-visible{opacity:1;pointer-events:auto;outline:2px solid var(--n-pwr);outline-offset:2px}
+
+  /* The figure below gets a dateline once the story precedes it. */
+  .handoff{padding-top:6px}
+  .handoff .kicker{margin-bottom:11px}
+
+  @media (max-width:720px){
+    #story{--beat:104vh}
+    .beat-copy{bottom:8vh;padding:0 22px}
+    .beat-copy .say{max-width:30ch}
+    .beat-copy .fig{margin-top:16px}
+    .hint{left:22px}
+  }
+  /* Short viewports: the copy and the graphic would collide, so tighten. */
+  @media (max-height:640px){
+    .beat-copy{bottom:6vh}
+    .beat-copy .yr{font-size:clamp(38px,8vw,64px);margin-bottom:10px}
+    .beat-copy .fig{margin-top:12px}
+  }
+
+  /* Reduced motion: keep the four beats as plain stacked panels, drop the
+     sticky stage, the eased interpolation and the animated hint entirely. */
+  @media (prefers-reduced-motion:reduce){
+    #story-stage{position:relative;height:auto;min-height:78vh;padding:9vh 0}
+    #story{--beat:0px}
+    .beat{display:none}
+    .beat-copy{position:relative;bottom:auto;opacity:1;transform:none;
+      padding:5vh 6vw 0;transition:none}
+    .hint i{animation:none}
+    #story-out{height:34vh}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .beats{position:relative;inset:auto}
+    /* Keep one static frame of the graphic at the head of the stack — the
+       sequence is gone but the reader still gets the picture. */
+    #sky{position:relative;inset:auto;height:46vh;min-height:300px;opacity:1!important}
+    .grain,.scrim{display:none}
+    .plate{opacity:.16!important;position:absolute}
+    .beat-copy{max-width:74ch;margin:0 auto}
+    .hint{display:none}
+    .skip{display:none}
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
+<!-- ==========================================================================
+     Scroll story. Markup only: every value in the graphic is computed at run
+     time from the same reactor records that feed the figure below, so the
+     narrative cannot drift out of step with the data.
+     Photographic plates are optional — see story/README.txt.
+     ====================================================================== -->
+<a href="#figure" class="skip" id="skip">Skip to the data</a>
+
+<section id="story" aria-label="A short history of American reactors">
+  <div id="story-stage">
+    <div class="plate" id="p1" style="background-image:url('story/1942-chicago-pile.jpg')"></div>
+    <div class="plate" id="p2" style="background-image:url('story/1960s-buildout.jpg')"></div>
+    <div class="plate" id="p3" style="background-image:url('story/1979-three-mile-island.jpg')"></div>
+    <div class="plate" id="p4" style="background-image:url('story/2026-advanced-reactors.jpg')"></div>
+    <svg id="sky" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+    <div class="grain"></div>
+    <div class="scrim"></div>
+
+    <div class="beats">
+      <div class="beat-copy b1" id="c1">
+        <p class="era">Stagg Field, Chicago &middot; 2 December 1942</p>
+        <p class="yr">1942</p>
+        <p class="say">Under the west stands of a disused football stadium, a lattice of graphite
+          blocks and uranium slugs sustains the first controlled chain reaction. <em>Chicago Pile&#8209;1</em>
+          has no shielding, no coolant and no containment &mdash; only a man with an axe, standing by
+          to cut a rope.</p>
+        <div class="fig"><b>0.5 W</b><span>output at first criticality</span></div>
+      </div>
+
+      <div class="beat-copy b2" id="c2">
+        <p class="era">The build&#8209;out &middot; 1953&ndash;1979</p>
+        <p class="yr">107.6 <small>GW</small></p>
+        <p class="say">Seventy&#8209;two reactors break ground in the 1960s. A hundred and one follow in
+          the 1970s, almost all of them pressurised or boiling water designs. <em>The fleet crests in
+          1996</em> and never goes higher.</p>
+        <div class="fig"><b>122</b><span>units that reached commercial operation</span></div>
+      </div>
+
+      <div class="beat-copy b3" id="c3">
+        <p class="era">Three Mile Island, Pennsylvania &middot; 28 March 1979</p>
+        <p class="yr">1979</p>
+        <p class="say">A loss&#8209;of&#8209;coolant accident partly melts the core of Unit&nbsp;2. It leaves no
+          detectable health effect on the workers or the public &mdash; and it ends new American nuclear
+          construction for a generation. <em>One reactor breaks ground in the 1980s. None in the
+          1990s. None in the 2000s.</em></p>
+        <div class="fig"><b>44</b><span>units abandoned part&#8209;built &middot; 46.7 GW never finished</span></div>
+      </div>
+
+      <div class="beat-copy b4" id="c4">
+        <p class="era">Today &middot; August 2026</p>
+        <p class="yr">2026</p>
+        <p class="say">The licensing pathways reopen, and a new cohort reaches criticality inside a
+          year of breaking ground &mdash; one of them in under eight months. Sodium&#8209;cooled,
+          gas&#8209;cooled, molten&#8209;salt. <em>Almost none of them cooled by water.</em></p>
+        <div class="fig"><b>5</b><span>advanced reactors critical since June</span></div>
+      </div>
+    </div>
+
+    <div class="hint" id="hint"><i></i>Scroll</div>
+  </div>
+
+  <div class="beat"></div><div class="beat"></div><div class="beat"></div><div class="beat"></div>
+
+  <div id="story-out">
+    <div class="cue" id="cue"><b>Two hundred and thirty reactors</b>Built, abandoned, or under construction</div>
+  </div>
+</section>
+<div class="wrap" id="figure">
 <header>
   <div class="masthead">
     <h1>American Nuclear Renaissance</h1>
@@ -718,6 +956,7 @@ var data = REACTORS.map(function(r,i){
 });
 
 var NCRIT = data.filter(function(d){ return d.crit; }).length;
+window.STORYDATA = data;   /* read-only handle for the scroll story above */
 
 // Deterministic vertical offset so lines that would land on the same pixels stay
 // separately hoverable. Reactors share a y position when they share a capacity,
@@ -2131,6 +2370,365 @@ window.addEventListener("resize", function(){
   clearTimeout(rt);
   rt = setTimeout(draw, 120);
 });
+})();
+</script>
+<script>
+/* ==========================================================================
+   Scroll story engine.
+
+   Native scrolling is left alone. There is no wheel handler and no smooth
+   scroll shim; the only input is window.scrollY, read inside a rAF loop. The
+   momentum feel comes from easing the drawn state toward the scroll-derived
+   target each frame, which is cheaper than a scroll library and keeps the
+   scrollbar, keyboard paging and trackpad behaving exactly as the reader
+   expects.
+
+   Everything in the frame is derived from `data` — the same 230 records the
+   figure below is drawn from — so the narrative cannot contradict the chart.
+   ====================================================================== */
+(function(){
+  var story = document.getElementById("story");
+  var data  = window.STORYDATA;
+  if(!story || !data) return;
+
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var sky   = document.getElementById("sky");
+  var hint  = document.getElementById("hint");
+  var cue   = document.getElementById("cue");
+  var skip  = document.getElementById("skip");
+  var copies = [1,2,3,4].map(function(n){ return document.getElementById("c"+n); });
+  var plates = [1,2,3,4].map(function(n){ return document.getElementById("p"+n); });
+
+  /* ---- palette: the figure's type colours, lifted for a dark ground ---- */
+  var NC = {
+    PWR:"#5aa3d0", BWR:"#dba24f", HTGR:"#a98cd4", GCR:"#6fae9b", FBR:"#e06a6a",
+    SFR:"#eb8b4e", SGR:"#3fb0aa", PHWR:"#9dc45c", OCR:"#b79279", MSR:"#d96aa8",
+    Other:"#a49c8d"
+  };
+  var CRIT = "#e8290f", VOLT = "#e0aa22", INK = "#f4efe4", FAINT = "#4a5158";
+
+  /* ---- time helpers: fractional years, so the camera can sit between them -- */
+  function yfrac(d){
+    var y = d.getUTCFullYear();
+    var a = Date.UTC(y,0,1), b = Date.UTC(y+1,0,1);
+    return y + (d.getTime() - a) / (b - a);
+  }
+  /* Names in the record set run to "Groves Isotope Test Reactor"; at 10px
+     that overruns the axis, so the label keeps the identifying head of the
+     name and drops the generic tail. */
+  function shortName(t){
+    var n = String(t).replace(/\s+(Isotope\s+)?Test\s+Reactor$/i, "")
+                     .replace(/\s+Reactor$/i, "");
+    return n.length > 17 ? n.slice(0, 16).replace(/[\s\-]+$/, "") + "\u2026" : n;
+  }
+  function esc(t){
+    return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+  var CP1 = 1942.92;               /* 2 December 1942 */
+  var TMI = 1979.24;               /* 28 March 1979  */
+
+  /* ---- precompute: per-reactor geometry inputs, once ---- */
+  var R = data.map(function(d){
+    return {
+      s: yfrac(d.s), e: yfrac(d.e), mw: d.mw || 0, cat: d.cat, type: d.type,
+      crit: d.crit ? yfrac(d.crit) : null,
+      name: d.name, col: NC[d.type] || NC.Other
+    };
+  }).sort(function(a,b){ return a.s - b.s; });
+
+  var CRITS = R.filter(function(r){ return r.crit; })
+               .sort(function(a,b){ return a.crit - b.crit; });
+
+  /* Operating fleet capacity, monthly, from commercial-operation to shutdown.
+     Built once from the same records; sampled by year when drawing. */
+  var CAP = (function(){
+    var ev = [];
+    data.forEach(function(d){
+      if(d.cat !== "comm") return;
+      var on = d.cod || d.e; if(!on) return;
+      ev.push([yfrac(on), d.mw || 0]);
+      if(d.cl) ev.push([yfrac(d.cl), -(d.mw || 0)]);
+    });
+    ev.sort(function(a,b){ return a[0] - b[0]; });
+    var pts = [], run = 0, k = 0;
+    for(var y = 1950; y <= 2027; y += 1/12){
+      while(k < ev.length && ev[k][0] <= y){ run += ev[k][1]; k++; }
+      pts.push([y, run / 1000]);          /* gigawatts */
+    }
+    return pts;
+  })();
+  var CAPMAX = CAP.reduce(function(m,p){ return Math.max(m, p[1]); }, 0);
+
+  /* ---- camera keyframes. `rev` is the reveal front in years: reactors and
+     the capacity curve are drawn only up to it. -------------------------- */
+  var KF = [
+    { at:0.00, x0:1936.6, x1:1951.4, rev:1943.4, dim:0.00 },
+    { at:0.25, x0:1944.0, x1:1972.0, rev:1963.5, dim:0.00 },
+    { at:0.50, x0:1948.0, x1:1988.0, rev:TMI,    dim:0.00 },
+    { at:0.75, x0:1950.0, x1:2006.0, rev:1997.0, dim:1.00 },
+    { at:1.00, x0:1962.0, x1:2032.0, rev:2027.5, dim:1.00 }
+  ];
+  function smooth(t){ return t*t*(3 - 2*t); }
+  function camera(p){
+    var i = 0;
+    while(i < KF.length - 2 && p > KF[i+1].at) i++;
+    var a = KF[i], b = KF[i+1];
+    var t = smooth(Math.max(0, Math.min(1, (p - a.at) / (b.at - a.at))));
+    return {
+      x0: a.x0 + (b.x0 - a.x0) * t,
+      x1: a.x1 + (b.x1 - a.x1) * t,
+      rev: a.rev + (b.rev - a.rev) * t,
+      dim: a.dim + (b.dim - a.dim) * t
+    };
+  }
+
+  /* ---- state: target from scroll, current eased toward it ---- */
+  var tgt = { p:0, out:0 }, cur = { x0:KF[0].x0, x1:KF[0].x1, rev:KF[0].rev, dim:0, p:0, out:0 };
+  var W = 0, H = 0, beatPx = 0, top0 = 0, seeded = false;
+
+  function measure(){
+    var r = story.getBoundingClientRect();
+    top0 = r.top + window.scrollY;
+    beatPx = window.innerHeight * 1.12;
+    W = story.clientWidth || window.innerWidth;
+    /* Measure the drawing surface itself rather than assuming it fills the
+       viewport: under reduced motion the stage collapses and #sky becomes a
+       short static block, and a stale viewBox would letterbox the frame. */
+    var sr = sky.getBoundingClientRect();
+    H = Math.round(sr.height) || window.innerHeight;
+    if(Math.round(sr.width) > 0) W = Math.round(sr.width);
+    sky.setAttribute("viewBox", "0 0 " + W + " " + H);
+    sky.setAttribute("preserveAspectRatio", "none");
+  }
+
+  function readScroll(){
+    var scrolled = window.scrollY - top0;
+    tgt.p   = Math.max(0, Math.min(1, scrolled / (4 * beatPx)));
+    tgt.out = Math.max(0, Math.min(1, (scrolled - 4 * beatPx) / (window.innerHeight * 0.48)));
+  }
+
+  /* ---- copy, plates and chrome follow the beat, not the eased camera, so a
+     fast flick still lands the right words with the right picture --------- */
+  var shown = -1;
+  function chrome(p, out){
+    /* The copy for a beat lands a short way into it, not on the boundary: the
+       camera needs a moment to widen and the reveal front to bring in the
+       bars, so a headline never asserts a figure over an empty stage. */
+    var b = p >= 0.79 ? 3 : p >= 0.54 ? 2 : p >= 0.29 ? 1 : 0;
+    if(out > 0.30) b = -1;
+    if(b !== shown){
+      shown = b;
+      copies.forEach(function(el,i){ el.classList.toggle("on", i === b); });
+      plates.forEach(function(el,i){ el.style.opacity = (i === b) ? 1 : 0; });
+    }
+    hint.style.opacity = p > 0.04 ? 0 : 1;
+    cue.classList.toggle("on", out > 0.34 && out < 0.995);
+    skip.classList.toggle("on", out < 0.9);
+    var live = out < 0.995;
+    document.documentElement.classList.toggle("story-live", live);
+    document.body.classList.toggle("story-live", live);
+    sky.style.opacity = 1 - smooth(Math.min(1, Math.max(0, (out - 0.06) / 0.44)));
+  }
+
+  /* ---- the frame ---- */
+  function draw(){
+    var x0 = cur.x0, x1 = cur.x1, rev = cur.rev;
+    var padL = Math.max(34, W * 0.055), padR = Math.max(34, W * 0.055);
+    /* When the frame is narrow, or simply taller than it is wide, the copy
+       needs the whole lower half; the graphic is compressed into the top of
+       the frame rather than being overprinted by the text. Deciding on
+       aspect as well as width catches tablets held in portrait. */
+    var narrow = W < 900 || H / W > 1.02;
+    var base   = H * (narrow ? 0.455 : 0.735);
+    var capTop = H * (narrow ? 0.105 : 0.235);
+    var barH   = H * (narrow ? 0.165 : 0.300);
+    var span = x1 - x0;
+    function X(y){ return padL + (y - x0) / span * (W - padL - padR); }
+    /* Square-root capacity axis: the demonstration reactors at 1–10 MW have to
+       stay visible in the same frame as a 1,300 MW Westinghouse unit. */
+    function Ybar(mw){ return base - Math.sqrt(Math.max(0, mw) / 1460) * barH; }
+    function Ycap(gw){ return base - (gw / CAPMAX) * (base - capTop); }
+
+    var s = [];
+
+    /* baseline + decade ticks */
+    s.push('<line x1="0" y1="'+base.toFixed(1)+'" x2="'+W+'" y2="'+base.toFixed(1)+
+           '" stroke="'+FAINT+'" stroke-opacity=".5" stroke-width="1"/>');
+    var step = span > 60 ? 10 : span > 26 ? 5 : span > 12 ? 2 : 1;
+    for(var y = Math.ceil(x0/step)*step; y <= x1; y += step){
+      var xx = X(y);
+      s.push('<line x1="'+xx.toFixed(1)+'" y1="'+base.toFixed(1)+'" x2="'+xx.toFixed(1)+
+             '" y2="'+(base+7).toFixed(1)+'" stroke="'+FAINT+'" stroke-opacity=".75"/>');
+      s.push('<text x="'+xx.toFixed(1)+'" y="'+(base+23).toFixed(1)+'" fill="'+FAINT+
+             '" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="11" '+
+             'text-anchor="middle" letter-spacing="1">'+y+'</text>');
+    }
+
+    /* capacity curve, clipped to the reveal front */
+    var xr = X(rev), area = [], line = [];
+    for(var i = 0; i < CAP.length; i++){
+      var p = CAP[i];
+      if(p[0] < x0 - 1) continue;
+      if(p[0] > Math.min(x1 + 1, rev)) break;
+      var px = X(p[0]).toFixed(1), py = Ycap(p[1]).toFixed(1);
+      line.push((line.length ? "L" : "M") + px + " " + py);
+      area.push(px + " " + py);
+    }
+    if(area.length > 1){
+      s.push('<path d="M'+area[0]+' L'+area.join(" L")+' L'+
+             X(Math.min(rev,x1)).toFixed(1)+' '+base.toFixed(1)+' L'+
+             X(Math.max(x0,1950)).toFixed(1)+' '+base.toFixed(1)+' Z" fill="'+NC.PWR+
+             '" fill-opacity=".085"/>');
+      s.push('<path d="'+line.join(" ")+'" fill="none" stroke="'+NC.PWR+
+             '" stroke-opacity=".55" stroke-width="1.4"/>');
+    }
+
+    /* reactors */
+    for(var j = 0; j < R.length; j++){
+      var r = R[j];
+      if(r.s > rev) continue;
+      if(r.e < x0 - 2 || r.s > x1 + 2) continue;
+      var xa = X(r.s), xb = X(Math.min(r.e, rev)), yb = Ybar(r.mw);
+      if(xb - xa < 0.4) xb = xa + 0.4;
+      var done = r.e <= rev;
+      var ab = r.cat === "unfinished";
+      /* Abandonments only turn red once the story has reached 1979 — before
+         that they are simply reactors under construction, which is what they
+         were at the time. */
+      var col = (ab && done && cur.dim > 0.02) ? CRIT : r.col;
+      var op  = (ab && done && cur.dim > 0.02) ? (0.5 + 0.45*cur.dim) : 0.82;
+      s.push('<line x1="'+xa.toFixed(1)+'" y1="'+yb.toFixed(1)+'" x2="'+xb.toFixed(1)+
+             '" y2="'+yb.toFixed(1)+'" stroke="'+col+'" stroke-opacity="'+op.toFixed(2)+
+             '" stroke-width="1.5"'+(ab && done ? ' stroke-dasharray="3 2.4"' : '')+'/>');
+      s.push('<circle cx="'+xa.toFixed(1)+'" cy="'+yb.toFixed(1)+'" r="1.9" fill="'+col+
+             '" fill-opacity="'+op.toFixed(2)+'"/>');
+      if(done){
+        if(ab && cur.dim > 0.02){
+          var k = 3.1;
+          s.push('<path d="M'+(xb-k).toFixed(1)+' '+(yb-k).toFixed(1)+' L'+(xb+k).toFixed(1)+' '+(yb+k).toFixed(1)+
+                 ' M'+(xb+k).toFixed(1)+' '+(yb-k).toFixed(1)+' L'+(xb-k).toFixed(1)+' '+(yb+k).toFixed(1)+
+                 '" stroke="'+CRIT+'" stroke-width="1.4" stroke-opacity="'+(0.55+0.45*cur.dim).toFixed(2)+'" fill="none"/>');
+        } else if(!ab){
+          s.push('<circle cx="'+xb.toFixed(1)+'" cy="'+yb.toFixed(1)+'" r="2.3" fill="'+col+
+                 '" fill-opacity="'+op.toFixed(2)+'"/>');
+        }
+      }
+    }
+
+    /* Three Mile Island: a rule that lands on the date and stays */
+    if(rev >= TMI - 0.4){
+      var xt = X(TMI), a = Math.min(1, (rev - TMI + 0.4) / 1.4);
+      s.push('<line x1="'+xt.toFixed(1)+'" y1="'+(capTop-18).toFixed(1)+'" x2="'+xt.toFixed(1)+
+             '" y2="'+base.toFixed(1)+'" stroke="'+CRIT+'" stroke-width="1.2" stroke-opacity="'+
+             (0.72*a).toFixed(2)+'" stroke-dasharray="2 3"/>');
+      s.push('<text x="'+(xt+8).toFixed(1)+'" y="'+(capTop-8).toFixed(1)+'" fill="'+CRIT+
+             '" fill-opacity="'+(0.9*a).toFixed(2)+
+             '" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="10.5" '+
+             'letter-spacing="2.2">28 MARCH 1979</text>');
+    }
+
+    /* Chicago Pile-1: not in the dataset, and not a power reactor — drawn as a
+       single marked point so beat one has a subject. */
+    var cx = X(CP1);
+    if(cx > -60 && cx < W + 60){
+      var f = Math.max(0, 1 - Math.max(0, cur.p - 0.16) / 0.16);   /* fades after beat one */
+      var cy = base - H * 0.055;
+      if(f > 0.01){
+        s.push('<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+(20 - 9*(1-f)).toFixed(1)+
+               '" fill="none" stroke="'+CRIT+'" stroke-opacity="'+(0.20*f).toFixed(2)+'"/>');
+        s.push('<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+(8.5 - 3*(1-f)).toFixed(1)+
+               '" fill="none" stroke="'+CRIT+'" stroke-opacity="'+(0.55*f).toFixed(2)+'" stroke-width="1.3"/>');
+        s.push('<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="3" fill="'+CRIT+
+               '" fill-opacity="'+f.toFixed(2)+'"/>');
+        s.push('<line x1="'+cx.toFixed(1)+'" y1="'+(cy+11).toFixed(1)+'" x2="'+cx.toFixed(1)+
+               '" y2="'+base.toFixed(1)+'" stroke="'+CRIT+'" stroke-opacity="'+(0.3*f).toFixed(2)+'"/>');
+        s.push('<text x="'+cx.toFixed(1)+'" y="'+(cy-27).toFixed(1)+'" fill="'+INK+
+               '" fill-opacity="'+(0.8*f).toFixed(2)+
+               '" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="10.5" '+
+               'text-anchor="middle" letter-spacing="2.2">CHICAGO PILE&#8209;1</text>');
+      }
+    }
+
+    /* The modern cohort. These are 1-3 MW machines, so on a capacity axis
+       scaled to a 1,460 MW Westinghouse unit they sit on the baseline and
+       disappear. The last beat is about them, so each one gets a leader up
+       off the axis, a ring that closes as it goes critical, and a name.
+       They are staggered vertically because several went critical weeks
+       apart and would otherwise overprint. */
+    var lead = cur.dim;                       /* only in the closing beats */
+    if(lead > 0.02){
+      for(var m = 0; m < CRITS.length; m++){
+        var c = CRITS[m];
+        if(c.crit > rev) continue;
+        var g = Math.min(1, (rev - c.crit) * 3.2);
+        var xcc = X(c.crit);
+        var stack = 52 + (CRITS.length - 1 - m) * 26;   /* newest lowest */
+        var ycc = base - stack * lead;
+        var o = (0.95 * g * lead).toFixed(2);
+
+        s.push('<line x1="'+xcc.toFixed(1)+'" y1="'+base.toFixed(1)+'" x2="'+xcc.toFixed(1)+
+               '" y2="'+(ycc + 6).toFixed(1)+'" stroke="'+VOLT+'" stroke-width="1" '+
+               'stroke-opacity="'+(0.34 * g * lead).toFixed(2)+'"/>');
+        s.push('<circle cx="'+xcc.toFixed(1)+'" cy="'+ycc.toFixed(1)+'" r="'+(4.6 + 5*(1-g)).toFixed(1)+
+               '" fill="none" stroke="'+VOLT+'" stroke-width="1.5" stroke-opacity="'+o+'"/>');
+        s.push('<circle cx="'+xcc.toFixed(1)+'" cy="'+ycc.toFixed(1)+'" r="1.9" fill="'+VOLT+
+               '" fill-opacity="'+o+'"/>');
+        s.push('<circle cx="'+xcc.toFixed(1)+'" cy="'+ycc.toFixed(1)+'" r="'+(12 + 18*(1-g)).toFixed(1)+
+               '" fill="none" stroke="'+VOLT+'" stroke-opacity="'+(0.3*g*(1-g)*4*lead).toFixed(2)+'"/>');
+        s.push('<text x="'+(xcc - 11).toFixed(1)+'" y="'+(ycc + 3.6).toFixed(1)+
+               '" fill="'+VOLT+'" fill-opacity="'+(0.9 * g * lead).toFixed(2)+
+               '" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="10" '+
+               'text-anchor="end" letter-spacing="1.6">'+esc(shortName(c.name)).toUpperCase()+'</text>');
+      }
+    }
+
+    sky.innerHTML = s.join("");
+  }
+
+  /* ---- loop ---- */
+  function tick(){
+    readScroll();
+    var c = camera(tgt.p);
+    var k = 0.16;
+    cur.x0  += (c.x0  - cur.x0)  * k;
+    cur.x1  += (c.x1  - cur.x1)  * k;
+    cur.rev += (c.rev - cur.rev) * k;
+    cur.dim += (c.dim - cur.dim) * k;
+    cur.p   += (tgt.p - cur.p)   * k;
+    chrome(tgt.p, tgt.out);
+    draw();
+    requestAnimationFrame(tick);
+  }
+
+  measure();
+  window.addEventListener("resize", function(){ measure(); if(reduce) staticFrame(); }, {passive:true});
+
+  function staticFrame(){
+    /* Reduced motion: one full-domain frame, no loop, no easing. */
+    cur.x0 = 1936.6; cur.x1 = 2028.5; cur.rev = 2027.5; cur.dim = 1; cur.p = 1;
+    copies.forEach(function(el){ el.classList.add("on"); });
+    draw();
+  }
+
+  if(reduce){ staticFrame(); }
+  else { readScroll(); var c0 = camera(tgt.p);
+         cur.x0=c0.x0; cur.x1=c0.x1; cur.rev=c0.rev; cur.dim=c0.dim; cur.p=tgt.p;
+         requestAnimationFrame(tick); }
+
+  /* Plates are optional. If a file is absent, drop the layer entirely rather
+     than leaving four empty boxes fading in and out. */
+  (function(){
+    var need = plates.length, ok = 0, bad = 0;
+    plates.forEach(function(el){
+      var u = (el.style.backgroundImage || "").replace(/^url\(['"]?/,"").replace(/['"]?\)$/,"");
+      var im = new Image();
+      im.onload  = function(){ if(++ok + bad === need) settle(); };
+      im.onerror = function(){ el.style.backgroundImage = "none";
+                               if(ok + ++bad === need) settle(); };
+      im.src = u;
+    });
+    function settle(){ if(ok === 0) story.classList.add("no-plates"); }
+  })();
 })();
 </script>
 </body>
