@@ -128,14 +128,17 @@
     #titlecard .inner{padding:44px 22px 40px}
   }
 
-  /* Rule-work bands: a thin strip of the same stitched geometry beside a
-     section label, so the title card's language carries through the page. */
-  .geoband{display:flex;align-items:center;gap:16px;margin:0 0 14px}
-  .geoband .lbl{font:400 10.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;
-    color:var(--muted);flex:none}
-  .geoband .geo{flex:1 1 0;min-width:0;height:17px;overflow:hidden}
-  .geoband .geo svg{width:100%;height:100%;display:block}
-  .geoband .geo path{fill:none;stroke:var(--rule);stroke-width:.7}
+  /* Scroll cue at the foot of the cover — the card fills the screen, so
+     without it nothing says the page continues. Fades away with the card. */
+  .tc-cue{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);
+    font:400 9.5px/1 var(--mono);letter-spacing:.3em;text-transform:uppercase;
+    color:#a99b7e;text-align:center}
+  .tc-cue i{display:block;width:1px;height:26px;margin:10px auto 0;
+    background:linear-gradient(rgba(169,155,126,0), rgba(169,155,126,.9));
+    animation:tc-reach 2.6s ease-in-out infinite}
+  @keyframes tc-reach{0%,100%{transform:scaleY(.55);transform-origin:top}
+    55%{transform:scaleY(1);transform-origin:top}}
+  @media (prefers-reduced-motion: reduce){ .tc-cue i{animation:none} }
 
   /* String-art rails in the page gutters, flanking the figure and map. They
      live entirely outside the 1220px content column, so they can never touch
@@ -547,6 +550,7 @@
     <div class="inner">
       <h1>A Brief History of American Reactors</h1>
     </div>
+    <div class="tc-cue" aria-hidden="true">Scroll<i></i></div>
   </div>
 </section>
 
@@ -648,7 +652,6 @@
 
 <div class="wrap" id="figure">
 <header>
-  <div class="geoband" aria-hidden="true"><div class="geo"></div></div>
   <h2 class="figtitle">Explore the history of reactor development in the United States</h2>
 </header>
 
@@ -738,7 +741,6 @@
 </div>
 
 <div class="mapwrap">
-  <div class="geoband" aria-hidden="true"><div class="geo"></div></div>
   <h2>Our nation&rsquo;s reactors, mapped</h2>
 
   <div class="controls" style="margin-top:20px;border-top:1px solid var(--rule);columns:2 206px">
@@ -3109,18 +3111,31 @@ window.addEventListener("resize", function(){
 
   var CREAM = "#f2ece0";
 
-  // Title card: three nested caustics weighted to the right, a sheaf sweeping
-  // out from under them, a fan grounding the composition on the baseline. The
-  // lower left is left clear for the title. Monochrome, like the plates it is
-  // drawn from — red stays reserved for 1979.
-  paint(document.getElementById("tc-art"), [
-    { d: sheaf([0,800],[1440,670], [1180,0],[1440,430], 44), s:CREAM, o:.15, w:.55 },
-    { d: fan([140,880], [840,190],[1440,70], 34),            s:CREAM, o:.10, w:.5  },
-    { d: rosette(1050,372,364,306, 210, 2, -0.5),            s:CREAM, o:.28, w:.5  },
-    { d: rosette(1050,372,246,208, 150, 3, 0.35),            s:CREAM, o:.24, w:.5  },
-    { d: rosette(1050,372,142,120, 100, 5, -0.2),            s:CREAM, o:.32, w:.5  },
-    { d: sheaf([720,800],[1440,800], [1440,800],[1440,290], 26), s:CREAM, o:.16, w:.55 }
-  ]);
+  // Title card: three nested caustics pushed to the upper right, a sheaf
+  // sweeping out from under them, a fan grounding the baseline. Monochrome,
+  // like the plates it is drawn from — red stays reserved for 1979. A radial
+  // scrim is painted over the lines where the title sits, so however the
+  // composition scales the type always stands on quiet ground: the figure
+  // appears to recede behind the headline instead of running through it.
+  (function(){
+    var svg = document.getElementById("tc-art");
+    if(!svg) return;
+    paint(svg, [
+      { d: sheaf([0,800],[1440,650], [1220,0],[1440,420], 44), s:CREAM, o:.15, w:.55 },
+      { d: fan([120,900], [860,170],[1440,50], 32),            s:CREAM, o:.09, w:.5  },
+      { d: rosette(1120,320,330,282, 210, 2, -0.5),            s:CREAM, o:.28, w:.5  },
+      { d: rosette(1120,320,222,190, 150, 3, 0.35),            s:CREAM, o:.24, w:.5  },
+      { d: rosette(1120,320,128,110, 100, 5, -0.2),            s:CREAM, o:.32, w:.5  },
+      { d: sheaf([760,800],[1440,800], [1440,800],[1440,310], 24), s:CREAM, o:.15, w:.55 }
+    ]);
+    svg.innerHTML = '<defs><radialGradient id="tc-scrim" cx="0.32" cy="0.52" r="0.55">'
+      + '<stop offset="0" stop-color="#0a0c0f" stop-opacity=".92"/>'
+      + '<stop offset=".55" stop-color="#0a0c0f" stop-opacity=".55"/>'
+      + '<stop offset="1" stop-color="#0a0c0f" stop-opacity="0"/>'
+      + '</radialGradient></defs>'
+      + svg.innerHTML
+      + '<rect x="0" y="0" width="1440" height="800" fill="url(#tc-scrim)"/>';
+  })();
 
   // The cover dissolves into the story. The card is 190vh tall and its view
   // is sticky, so for the first 90vh of scrolling the cover holds perfectly
@@ -3132,63 +3147,76 @@ window.addEventListener("resize", function(){
     var card = document.getElementById("titlecard");
     if(!card) return;
     if(window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    var inner = card.querySelector(".inner"), art = card.querySelector(".art");
+    var inner = card.querySelector(".inner"), art = card.querySelector(".art"),
+        cue = card.querySelector(".tc-cue");
     // No rAF gating here, deliberately. A gated handler wedges shut if the
     // first scroll fires while the tab is hidden — the queued frame never
     // runs, the flag never clears, and every later scroll is swallowed.
-    // The work is two style writes, cheap enough to do on every event.
+    // The work is a few style writes, cheap enough to do on every event.
     function apply(){
       var run = Math.max(1, card.offsetHeight - window.innerHeight);
       var p = Math.min(1, Math.max(0, window.scrollY / (run * 0.92)));
       var o = (1 - p).toFixed(3);
       inner.style.opacity = o; art.style.opacity = o;
+      // The cue goes first — twice as fast — so "Scroll" isn't still giving
+      // instructions in the middle of the dissolve it triggered.
+      if(cue) cue.style.opacity = (1 - Math.min(1, p * 2)).toFixed(3);
     }
     window.addEventListener("scroll", apply, {passive:true});
     window.addEventListener("resize", apply);
     apply();
   })();
 
-  // String-art rails in the gutters either side of the figure and map — off
-  // the data entirely, so they can afford a little more presence than a
-  // watermark would. A chain of caustics runs down each side, alternating
-  // step so the two rails don't mirror each other.
+  // String-art rails in the gutters either side of the figure and map. The
+  // first cut scattered rosettes at offset heights and read as clutter; this
+  // one is disciplined the way an engraved page border is: one hairline plumb
+  // line down the centre of each gutter, with identical caustic beads strung
+  // on it at a fixed interval, the same heights on both sides. The viewBox is
+  // sized to the rail's real aspect at build time (and rebuilt on resize), so
+  // the pattern never stretches or crops.
   (function(){
     var host = document.getElementById("figure");
     if(!host) return;
-    ["l","r"].forEach(function(side, si){
+    var rails = ["l","r"].map(function(side){
       var div = document.createElement("div");
       div.className = "siderail " + side;
       div.setAttribute("aria-hidden","true");
-      var s = document.createElementNS("http://www.w3.org/2000/svg","svg");
-      s.setAttribute("viewBox","0 0 240 6400");
-      s.setAttribute("preserveAspectRatio","xMidYMin slice");
-      var L = [];
-      // Eight figures spaced down the rail; k alternates 2/3/5 so the chain
-      // reads as a family, not a repeat. The right rail is phase-shifted.
-      for(var i=0;i<8;i++){
-        var y = 300 + i*790 + si*260;
-        var k = [2,3,5][(i+si)%3];
-        var r = 96 + ((i+si)%3)*22;
-        L.push({ d: rosette(120, y, r, r*0.86, 90+k*10, k, i*0.7+si*1.3), o: .10 });
-        // a fine thread joining this figure toward the next
-        L.push({ d: sheaf([120,y+r*0.9],[120,y+790-r*0.9],[60+si*120,y+200],[180-si*120,y+590], 12), o: .05 });
-      }
-      s.innerHTML = L.map(function(x){
-        return '<path d="'+x.d+'" stroke-opacity="'+x.o+'"/>';
-      }).join("");
-      div.appendChild(s);
       host.appendChild(div);
+      return div;
     });
+    var W = 240, STEP = 720, R = 84;
+    function build(){
+      rails.forEach(function(div){
+        if(getComputedStyle(div).display === "none"){ div.innerHTML = ""; return; }
+        var w = div.offsetWidth || 1, h = div.offsetHeight || 1;
+        var H = Math.max(1, Math.round(W * h / w));
+        var s = document.createElementNS("http://www.w3.org/2000/svg","svg");
+        s.setAttribute("viewBox", "0 0 " + W + " " + H);
+        s.setAttribute("preserveAspectRatio", "none");
+        var L = [];
+        // the plumb line, running the full height of the rail
+        L.push({ d: seg([120, 40], [120, H - 40]), o: .22, w: .7 });
+        // beads: k cycles 2 / 3 / 5 down the chain, size constant, spacing
+        // constant, both rails identical — repetition is what makes it read
+        // as ornament instead of accident
+        for(var y = STEP * 0.6, i = 0; y < H - STEP * 0.35; y += STEP, i++){
+          var k = [2, 3, 5][i % 3];
+          L.push({ d: rosette(120, y, R, R, 80 + k * 10, k, -Math.PI / 2), o: .13, w: .55 });
+          // a small measured tick between beads, like a scale mark
+          if(y + STEP < H - STEP * 0.35)
+            L.push({ d: seg([104, y + STEP / 2], [136, y + STEP / 2]), o: .18, w: .7 });
+        }
+        s.innerHTML = L.map(function(x){
+          return '<path d="' + x.d + '" stroke-opacity="' + x.o + '" stroke-width="' + x.w + '"/>';
+        }).join("");
+        div.innerHTML = "";
+        div.appendChild(s);
+      });
+    }
+    build();
+    var t;
+    window.addEventListener("resize", function(){ clearTimeout(t); t = setTimeout(build, 150); });
   })();
-
-  // Rule-work bands beside the section heads.
-  [].forEach.call(document.querySelectorAll(".geoband .geo"), function(box, n){
-    var s = document.createElementNS("http://www.w3.org/2000/svg","svg");
-    s.setAttribute("viewBox","0 0 600 17");
-    s.setAttribute("preserveAspectRatio","none");
-    s.innerHTML = '<path d="'+sheaf([0,17],[600,17],[0,0],[600,0], 58+n*7)+'"/>';
-    box.appendChild(s);
-  });
 })();
 </script>
 </body>
