@@ -3133,17 +3133,17 @@ window.addEventListener("resize", function(){
     if(!card) return;
     if(window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     var inner = card.querySelector(".inner"), art = card.querySelector(".art");
-    var ticking = false;
+    // No rAF gating here, deliberately. A gated handler wedges shut if the
+    // first scroll fires while the tab is hidden — the queued frame never
+    // runs, the flag never clears, and every later scroll is swallowed.
+    // The work is two style writes, cheap enough to do on every event.
     function apply(){
-      ticking = false;
       var run = Math.max(1, card.offsetHeight - window.innerHeight);
       var p = Math.min(1, Math.max(0, window.scrollY / (run * 0.92)));
       var o = (1 - p).toFixed(3);
       inner.style.opacity = o; art.style.opacity = o;
     }
-    window.addEventListener("scroll", function(){
-      if(!ticking){ ticking = true; requestAnimationFrame(apply); }
-    }, {passive:true});
+    window.addEventListener("scroll", apply, {passive:true});
     window.addEventListener("resize", apply);
     apply();
   })();
